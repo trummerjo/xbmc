@@ -1,1 +1,1 @@
-pvr.zattoo https://github.com/trummerjo/pvr.zattoo wurst master
+pvr.zattoo https://github.com/trummerjo/pvr.zattoo master
