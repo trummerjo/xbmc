@@ -361,7 +361,8 @@ EVENT_RESULT CGUIWindowFullScreen::OnMouseEvent(const CPoint &point, const CMous
 
 void CGUIWindowFullScreen::FrameMove()
 {
-  if (g_application.m_pPlayer->GetPlaySpeed() != 1)
+  float playspeed = g_application.m_pPlayer->GetPlaySpeed();
+  if (playspeed < 0.75 || playspeed > 1.55)
     g_infoManager.SetDisplayAfterSeek();
 
   if (!g_application.m_pPlayer->HasPlayer())
@@ -488,8 +489,8 @@ void CGUIWindowFullScreen::Process(unsigned int currentTime, CDirtyRegionList &d
 
   CGUIWindow::Process(currentTime, dirtyregion);
 
-  // TODO: This isn't quite optimal - ideally we'd only be dirtying up the actual video render rect
-  //       which is probably the job of the renderer as it can more easily track resizing etc.
+  //! @todo This isn't quite optimal - ideally we'd only be dirtying up the actual video render rect
+  //!       which is probably the job of the renderer as it can more easily track resizing etc.
   m_renderRegion.SetRect(0, 0, (float)g_graphicsContext.GetWidth(), (float)g_graphicsContext.GetHeight());
 }
 

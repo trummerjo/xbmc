@@ -31,6 +31,7 @@
 #include "pvr/channels/PVRChannelGroupsContainer.h"
 #include "pvr/PVRManager.h"
 #include "pvr/recordings/PVRRecordings.h"
+#include "pvr/timers/PVRTimerInfoTag.h"
 #include "settings/AdvancedSettings.h"
 #include "settings/lib/Setting.h"
 #include "settings/Settings.h"
@@ -42,7 +43,8 @@ using namespace EPG;
 using namespace PVR;
 
 CEpgContainer::CEpgContainer(void) :
-    CThread("EPGUpdater")
+  CThread("EPGUpdater"),
+  m_bUpdateNotificationPending(false)
 {
   m_progressHandle = NULL;
   m_bStop = true;
@@ -113,6 +115,7 @@ void CEpgContainer::Clear(bool bClearDb /* = false */)
     m_bStarted = false;
     m_bIsInitialising = true;
     m_iNextEpgId = 0;
+    m_bUpdateNotificationPending = false;
   }
 
   /* clear the database entries */
@@ -126,7 +129,10 @@ void CEpgContainer::Clear(bool bClearDb /* = false */)
   }
 
   SetChanged();
-  NotifyObservers(ObservableMessageEpgContainer);
+  {
+    CSingleExit ex(m_critSection);
+    NotifyObservers(ObservableMessageEpgContainer);
+  }
 
   if (bThreadRunning)
     Start(true);
@@ -168,6 +174,7 @@ void CEpgContainer::Start(bool bAsync)
 
     m_iNextEpgUpdate  = 0;
     m_iNextEpgActiveTagCheck = 0;
+    m_bUpdateNotificationPending = false;
   }
 
   LoadFromDB();
@@ -203,7 +210,16 @@ bool CEpgContainer::Stop(void)
 
 void CEpgContainer::Notify(const Observable &obs, const ObservableMessage msg)
 {
+  if (msg == ObservableMessageEpg)
+  {
+    // there can be many of these notifications during short time period. Thus, announce async and not every event.
+    CSingleLock lock(m_critSection);
+    m_bUpdateNotificationPending = true;
+    return;
+  }
+
   SetChanged();
+  CSingleExit ex(m_critSection);
   NotifyObservers(msg);
 }
 
@@ -235,18 +251,21 @@ void CEpgContainer::LoadFromDB(void)
   if (m_database.IsOpen())
   {
     {
-      /* unlock m_critSection before calling ShowProgressDialog() -
-         this is not legal, but works around a deadlock bug (because
-         ShowProgressDialog() calls functions which lock
-         g_graphicsContext); note that ShowProgressDialog() is
-         sometimes called with m_critSection locked and sometimes
-         without; this is a major bug that must be addressed
-         eventually */
+      //! @bug
+      //! unlock m_critSection before calling ShowProgressDialog() -
+      //! this is not legal, but works around a deadlock bug (because
+      //! ShowProgressDialog() calls functions which lock
+      //! g_graphicsContext); note that ShowProgressDialog() is
+      //! sometimes called with m_critSection locked and sometimes
+      //! without; this is a major bug that must be addressed
+      //! eventually
       CSingleExit exit(m_critSection);
       ShowProgressDialog(false);
     }
 
-    m_database.DeleteOldEpgEntries();
+    const CDateTime cleanupTime(CDateTime::GetUTCDateTime() -
+      CDateTimeSpan(0, g_advancedSettings.m_iEpgLingerTime / 60, g_advancedSettings.m_iEpgLingerTime % 60, 0));
+    m_database.DeleteEpgEntries(cleanupTime);
     m_database.Get(*this);
 
     for (const auto &epgEntry : m_epgs)
@@ -263,14 +282,6 @@ void CEpgContainer::LoadFromDB(void)
   }
 
   m_bLoaded = bLoaded;
-}
-
-bool CEpgContainer::PersistTables(void)
-{
-  m_critSection.lock();
-  auto copy = m_epgs;
-  m_critSection.unlock();
-  return m_database.Persist(copy);
 }
 
 bool CEpgContainer::PersistAll(void)
@@ -311,7 +322,7 @@ void CEpgContainer::Process(void)
       m_bIsInitialising = false;
 
     /* clean up old entries */
-    if (!m_bStop && iNow >= m_iLastEpgCleanup)
+    if (!m_bStop && iNow >= m_iLastEpgCleanup + g_advancedSettings.m_iEpgCleanupInterval)
       RemoveOldEntries();
 
     /* check for pending manual EPG updates */
@@ -355,6 +366,20 @@ void CEpgContainer::Process(void)
     if (!m_bStop)
       CheckPlayingEvents();
 
+    /* check for pending update notifications */
+    if (!m_bStop)
+    {
+      CSingleLock lock(m_critSection);
+      if (m_bUpdateNotificationPending)
+      {
+        m_bUpdateNotificationPending = false;
+        SetChanged();
+
+        CSingleExit ex(m_critSection);
+        NotifyObservers(ObservableMessageEpg);
+      }
+    }
+
     /* check for changes that need to be saved every 60 seconds */
     if (iNow - iLastSave > 60)
     {
@@ -369,11 +394,11 @@ void CEpgContainer::Process(void)
 CEpgPtr CEpgContainer::GetById(int iEpgId) const
 {
   if (iEpgId < 0)
-    return NULL;
+    return CEpgPtr();
 
   CSingleLock lock(m_critSection);
   const auto &epgEntry = m_epgs.find((unsigned int) iEpgId);
-  return epgEntry != m_epgs.end() ? epgEntry->second : NULL;
+  return epgEntry != m_epgs.end() ? epgEntry->second : CEpgPtr();
 }
 
 CEpgInfoTagPtr CEpgContainer::GetTagById(const CPVRChannelPtr &channel, unsigned int iBroadcastId) const
@@ -390,16 +415,20 @@ CEpgInfoTagPtr CEpgContainer::GetTagById(const CPVRChannelPtr &channel, unsigned
   return retval;
 }
 
-CEpgPtr CEpgContainer::GetByChannel(const CPVRChannel &channel) const
+std::vector<CEpgInfoTagPtr> CEpgContainer::GetEpgTagsForTimer(const CPVRTimerInfoTagPtr &timer) const
 {
-  CSingleLock lock(m_critSection);
-  for (const auto &epgEntry : m_epgs)
-  {
-    if (channel.ChannelID() == epgEntry.second->ChannelID())
-      return epgEntry.second;
-  }
+  CPVRChannelPtr channel(timer->ChannelTag());
 
-  return NULL;
+  if (!channel)
+    channel = timer->UpdateChannel();
+
+  if (channel)
+  {
+    const CEpgPtr epg(channel->GetEPG());
+    if (epg)
+      return epg->GetTagsBetween(timer->StartAsUTC(), timer->EndAsUTC());
+  }
+  return std::vector<CEpgInfoTagPtr>();
 }
 
 void CEpgContainer::InsertFromDatabase(int iEpgID, const std::string &strName, const std::string &strScraperName)
@@ -428,10 +457,10 @@ void CEpgContainer::InsertFromDatabase(int iEpgID, const std::string &strName, c
   }
 }
 
-CEpgPtr CEpgContainer::CreateChannelEpg(CPVRChannelPtr channel)
+CEpgPtr CEpgContainer::CreateChannelEpg(const CPVRChannelPtr &channel)
 {
   if (!channel)
-    return NULL;
+    return CEpgPtr();
 
   WaitForUpdateFinish(true);
   LoadFromDB();
@@ -459,6 +488,7 @@ CEpgPtr CEpgContainer::CreateChannelEpg(CPVRChannelPtr channel)
     CDateTime::GetCurrentDateTime().GetAsUTCDateTime().GetAsTime(m_iNextEpgUpdate);
   }
 
+  CSingleExit ex(m_critSection);
   NotifyObservers(ObservableMessageEpgContainer);
 
   return epg;
@@ -475,20 +505,19 @@ bool CEpgContainer::LoadSettings(void)
 
 bool CEpgContainer::RemoveOldEntries(void)
 {
-  CDateTime now = CDateTime::GetUTCDateTime() -
-      CDateTimeSpan(0, g_advancedSettings.m_iEpgLingerTime / 60, g_advancedSettings.m_iEpgLingerTime % 60, 0);
+  const CDateTime cleanupTime(CDateTime::GetUTCDateTime() -
+    CDateTimeSpan(0, g_advancedSettings.m_iEpgLingerTime / 60, g_advancedSettings.m_iEpgLingerTime % 60, 0));
 
   /* call Cleanup() on all known EPG tables */
   for (const auto &epgEntry : m_epgs)
-    epgEntry.second->Cleanup(now);
+    epgEntry.second->Cleanup(cleanupTime);
 
   /* remove the old entries from the database */
   if (!m_bIgnoreDbForClient && m_database.IsOpen())
-    m_database.DeleteOldEpgEntries();
+    m_database.DeleteEpgEntries(cleanupTime);
 
   CSingleLock lock(m_critSection);
   CDateTime::GetCurrentDateTime().GetAsUTCDateTime().GetAsTime(m_iLastEpgCleanup);
-  m_iLastEpgCleanup += g_advancedSettings.m_iEpgCleanupInterval;
 
   return true;
 }
@@ -680,6 +709,7 @@ bool CEpgContainer::UpdateEPG(bool bOnlyPending /* = false */)
   if (iUpdatedTables > 0)
   {
     SetChanged();
+    CSingleExit ex(m_critSection);
     NotifyObservers(ObservableMessageEpgContainer);
   }
 
@@ -688,17 +718,6 @@ bool CEpgContainer::UpdateEPG(bool bOnlyPending /* = false */)
   m_updateEvent.Set();
 
   return !bInterrupted;
-}
-
-int CEpgContainer::GetEPGAll(CFileItemList &results)
-{
-  int iInitialSize = results.Size();
-
-  CSingleLock lock(m_critSection);
-  for (const auto &epgEntry : m_epgs)
-    epgEntry.second->Get(results);
-
-  return results.Size() - iInitialSize;
 }
 
 const CDateTime CEpgContainer::GetFirstEPGDate(void)
@@ -780,15 +799,10 @@ bool CEpgContainer::CheckPlayingEvents(void)
   if (bFoundChanges)
   {
     SetChanged();
+    CSingleExit ex(m_critSection);
     NotifyObservers(ObservableMessageEpgActiveItem);
   }
   return bReturn;
-}
-
-bool CEpgContainer::IsInitialising(void) const
-{
-  CSingleLock lock(m_critSection);
-  return m_bIsInitialising;
 }
 
 void CEpgContainer::SetHasPendingUpdates(bool bHasPendingUpdates /* = true */)

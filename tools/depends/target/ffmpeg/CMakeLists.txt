@@ -15,9 +15,8 @@ if(CROSSCOMPILING)
   message(STATUS "CROSS: ${ffmpeg_conf}")
 endif()
 
-if(CORE_SYSTEM_NAME STREQUAL linux)
-  list(APPEND ffmpeg_conf --enable-vdpau --enable-vaapi
-                          --enable-libvorbis --enable-muxer=ogg --enable-encoder=libvorbis)
+if(CORE_SYSTEM_NAME STREQUAL linux OR CORE_SYSTEM_NAME STREQUAL freebsd)
+  list(APPEND ffmpeg_conf --enable-vdpau --enable-vaapi --enable-pic)
 elseif(CORE_SYSTEM_NAME STREQUAL android)
   if(CPU MATCHES arm)
     list(APPEND ffmpeg_conf --cpu=cortex-a9)
@@ -29,11 +28,11 @@ elseif(CORE_SYSTEM_NAME STREQUAL ios)
   if(NOT CPU MATCHES arm64)
     list(APPEND ffmpeg_conf --cpu=cortex-a8)
   endif()
-  list(APPEND ffmpeg_conf --disable-decoder=mpeg_xvmc --disable-vda --disable-crystalhd --disable-videotoolbox
+  list(APPEND ffmpeg_conf --disable-decoder=mpeg_xvmc --disable-vda --disable-crystalhd --enable-videotoolbox
                           --target-os=darwin)
 elseif(CORE_SYSTEM_NAME STREQUAL osx)
   list(APPEND ffmpeg_conf --disable-outdev=sdl
-                          --disable-decoder=mpeg_xvmc --enable-vda --disable-crystalhd --disable-videotoolbox
+                          --disable-decoder=mpeg_xvmc --disable-vda --disable-crystalhd --enable-videotoolbox
                           --target-os=darwin
                           --disable-securetransport)
 endif()
@@ -47,12 +46,6 @@ endif()
 find_package(GnuTls)
 if(GNUTLS_FOUND)
   list(APPEND ffmpeg_conf --enable-gnutls)
-endif()
-
-include(ProcessorCount)
-ProcessorCount(N)
-if(NOT N EQUAL 0)
-  set(PARALLEL_FLAGS -j${N})
 endif()
 
 include(ExternalProject)
@@ -82,8 +75,7 @@ externalproject_add(ffmpeg
                       --enable-protocol=http
                       --enable-encoder=png
                       --enable-encoder=mjpeg
-                      ${ffmpeg_conf}
-                    BUILD_COMMAND make ${PARALLEL_FLAGS})
+                      ${ffmpeg_conf})
 
 install(CODE "Message(Done)")
 

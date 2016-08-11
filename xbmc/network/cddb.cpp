@@ -219,8 +219,8 @@ bool Xcddb::queryCDinfo(CCdInfo* pInfo, int inexact_list_select)
 
   //##########################################################
   // Read the data from cddb
-  Recv(false); //erstmal den Müll abholen
-  if ( !Send(read_buffer.c_str()) )
+  Recv(false); // Clear pending data on our connection
+  if (!Send(read_buffer.c_str()))
   {
     CLog::Log(LOGERROR, "Xcddb::queryCDinfo_inexaxt_list_select Error sending \"%s\"", read_buffer.c_str());
     CLog::Log(LOGERROR, "Xcddb::queryCDinfo_inexaxt_list_select pInfo == NULL");
@@ -515,7 +515,7 @@ void Xcddb::parseData(const char *buffer)
     std::string strKeyword = *it;
     std::string strValue = keywords[strKeyword];
 
-    /* TODO:STRING_CLEANUP */
+    //! @todo STRING_CLEANUP
     if (strKeyword == "DTITLE")
     {
       // DTITLE may contain artist and disc title, separated with " / ",

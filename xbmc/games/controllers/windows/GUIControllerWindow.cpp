@@ -62,7 +62,7 @@ bool CGUIControllerWindow::OnMessage(CGUIMessage& message)
   {
     case GUI_MSG_WINDOW_INIT:
     {
-      // TODO: Process parameter
+      //! @todo Process parameter
       //std::string strParam = message.GetStringParam();
       break;
     }
@@ -130,6 +130,20 @@ bool CGUIControllerWindow::OnMessage(CGUIMessage& message)
       }
       break;
     }
+    case GUI_MSG_REFRESH_LIST:
+    {
+      int controlId = message.GetControlId();
+
+      if (controlId == CONTROL_CONTROLLER_LIST)
+      {
+        if (m_controllerList && m_controllerList->Refresh())
+        {
+          CGUIDialog::OnMessage(message);
+          return true;
+        }
+      }
+      break;
+    }
     default:
       break;
   }
@@ -137,10 +151,9 @@ bool CGUIControllerWindow::OnMessage(CGUIMessage& message)
   return CGUIDialog::OnMessage(message);
 }
 
-void CGUIControllerWindow::Notify(const Observable &obs, const ObservableMessage msg)
+void CGUIControllerWindow::OnEvent(const ADDON::CRepositoryUpdater::RepositoryUpdated& event)
 {
-  if (msg == ObservableMessageAddons)
-    UpdateButtons();
+  UpdateButtons();
 }
 
 void CGUIControllerWindow::OnInitWindow(void)
@@ -173,12 +186,13 @@ void CGUIControllerWindow::OnInitWindow(void)
   CGUIMessage msgFocus(GUI_MSG_SETFOCUS, GetID(), CONTROL_CONTROLLER_BUTTONS_START);
   OnMessage(msgFocus);
 
-  // Check for button mapping support (TODO: remove this)
+  // Check for button mapping support
+  //! @todo remove this
   PeripheralBusAddonPtr bus = std::static_pointer_cast<CPeripheralBusAddon>(g_peripherals.GetBusByType(PERIPHERAL_BUS_ADDON));
   if (bus && !bus->HasFeature(FEATURE_JOYSTICK))
   {
-    // TODO: Move the XML implementation of button map storage from add-on to
-    // Kodi while keeping support for add-on button-mapping
+    //! @todo Move the XML implementation of button map storage from add-on to
+    //! Kodi while keeping support for add-on button-mapping
 
     CLog::Log(LOGERROR, "Joystick support not found");
 
@@ -190,14 +204,15 @@ void CGUIControllerWindow::OnInitWindow(void)
     Close();
   }
 
-  UpdateButtons();
+  // FIXME: not thread safe
+//  ADDON::CRepositoryUpdater::GetInstance().Events().Subscribe(this, &CGUIControllerWindow::OnEvent);
 
-  ADDON::CAddonMgr::GetInstance().RegisterObserver(this);
+  UpdateButtons();
 }
 
 void CGUIControllerWindow::OnDeinitWindow(int nextWindowID)
 {
-  ADDON::CAddonMgr::GetInstance().UnregisterObserver(this);
+  ADDON::CRepositoryUpdater::GetInstance().Events().Unsubscribe(this);
 
   if (m_controllerList)
   {
@@ -224,8 +239,8 @@ void CGUIControllerWindow::OnControllerFocused(unsigned int controllerIndex)
 
 void CGUIControllerWindow::OnControllerSelected(unsigned int controllerIndex)
 {
-  // jump to the feature list
-  SET_CONTROL_FOCUS(CONTROL_FEATURE_BUTTONS_START, 0);
+  if (m_controllerList)
+    m_controllerList->OnSelect(controllerIndex);
 }
 
 void CGUIControllerWindow::OnFeatureFocused(unsigned int featureIndex)

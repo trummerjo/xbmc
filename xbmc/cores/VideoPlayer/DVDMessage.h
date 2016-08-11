@@ -30,6 +30,7 @@
 
 // include as less is possible to prevent dependencies
 #include "DVDResource.h"
+#include <atomic>
 #include <string>
 #include <string.h>
 
@@ -48,11 +49,11 @@ public:
     GENERAL_RESYNC,                 //
     GENERAL_FLUSH,                  // flush all buffers
     GENERAL_RESET,                  // reset codecs for new data
+    GENERAL_PAUSE,
     GENERAL_STREAMCHANGE,           //
     GENERAL_SYNCHRONIZE,            //
     GENERAL_GUI_ACTION,             // gui action of some sort
     GENERAL_EOF,                    // eof of stream
-
 
     // player core related messages (cVideoPlayer.cpp)
 
@@ -148,8 +149,8 @@ public:
 
   // waits until all threads waiting, released the object
   // if abort is set somehow
-  bool Wait(unsigned int   ms   , unsigned int source);
-  void Wait(volatile bool *abort, unsigned int source);
+  bool Wait(unsigned int ms         , unsigned int source);
+  void Wait(std::atomic<bool>& abort, unsigned int source);
 private:
   class CDVDMsgGeneralSynchronizePriv* m_p;
 };

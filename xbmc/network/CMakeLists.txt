@@ -45,7 +45,3 @@ if(SHAIRPLAY_FOUND)
 endif()
 
 core_add_library(network)
-
-if(ENABLE_INTERNAL_FFMPEG)
-  add_dependencies(network ffmpeg)
-endif()

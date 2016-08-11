@@ -40,15 +40,10 @@ if(VAAPI_FOUND)
   list(APPEND HEADERS VAAPI.h)
 endif()
 
-if(CORE_SYSTEM_NAME STREQUAL darwin)
-  list(APPEND SOURCES VDA.cpp)
-  list(APPEND HEADERS VDA.h)
-endif()
-
-if(VTB_FOUND)
-  list(APPEND SOURCES DVDVideoCodecVideoToolBox.cpp)
+if(APPLE)
+  list(APPEND SOURCES VTB.cpp)
   list(APPEND HEADERS DllVideoToolBox.h
-                      DVDVideoCodecVideoToolBox.h)
+                      VTB.h)
 endif()
 
 if(MMAL_FOUND)
@@ -69,7 +64,3 @@ if(CORE_SYSTEM_NAME STREQUAL android)
 endif()
 
 core_add_library(dvdvideocodecs)
-
-if(ENABLE_INTERNAL_FFMPEG)
-  add_dependencies(dvdvideocodecs ffmpeg)
-endif()

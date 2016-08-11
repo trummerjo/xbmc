@@ -30,13 +30,12 @@ public:
   CVideoSyncIMX(CVideoReferenceClock *clock);
   virtual ~CVideoSyncIMX();
   virtual bool Setup(PUPDATECLOCK func);
-  virtual void Run(volatile bool& stop);
+  virtual void Run(std::atomic<bool>& stop);
   virtual void Cleanup();
   virtual float GetFps();
   virtual void OnResetDisplay();
 private:
   volatile bool m_abort;
-  int m_fddcic;
 };
 
 #endif

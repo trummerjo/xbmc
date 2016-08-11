@@ -38,7 +38,6 @@ enum DVDStreamType
   DVDSTREAM_TYPE_MEMORY = 4,
   DVDSTREAM_TYPE_FFMPEG = 5,
   DVDSTREAM_TYPE_TV     = 6,
-  DVDSTREAM_TYPE_RTMP   = 7,
   DVDSTREAM_TYPE_MPLS   = 10,
   DVDSTREAM_TYPE_BLURAY = 11,
   DVDSTREAM_TYPE_PVRMANAGER = 12,
@@ -123,9 +122,7 @@ public:
     virtual DemuxPacket* ReadDemux() = 0;
     virtual CDemuxStream* GetStream(int iStreamId) const = 0;
     virtual std::vector<CDemuxStream*> GetStreams() const = 0;
-    virtual bool SupportsEnableAtPTS() const { return false; };
     virtual void EnableStream(int iStreamId, bool enable) = 0;
-    virtual void EnableStreamAtPTS(int iStreamId, uint64_t pts) {};
     virtual int GetNrOfStreams() const = 0;
     virtual void SetSpeed(int iSpeed) = 0;
     virtual bool SeekTime(int time, bool backward = false, double* startpts = NULL) = 0;
@@ -184,6 +181,8 @@ public:
   virtual IDemux* GetIDemux() { return nullptr; }
   virtual IPosTime* GetIPosTime() { return nullptr; }
   virtual IDisplayTime* GetIDisplayTime() { return nullptr; }
+
+  const CVariant &GetProperty(const std::string key){ return m_item.GetProperty(key); }
 
 protected:
   DVDStreamType m_streamType;

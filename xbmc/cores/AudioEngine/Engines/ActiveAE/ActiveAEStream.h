@@ -89,6 +89,38 @@ protected:
   XbmcThreads::EndTime m_timer;
 };
 
+class CActiveAEStreamBuffers
+{
+public:
+  CActiveAEStreamBuffers(AEAudioFormat inputFormat, AEAudioFormat outputFormat, AEQuality quality);
+  virtual ~CActiveAEStreamBuffers();
+  bool Create(unsigned int totaltime, bool remap, bool upmix, bool normalize = true, bool useDSP = false);
+  void SetExtraData(int profile, enum AVMatrixEncoding matrix_encoding, enum AVAudioServiceType audio_service_type);
+  bool ProcessBuffers();
+  void ConfigureResampler(bool normalizelevels, bool dspenabled, bool stereoupmix, AEQuality quality);
+  bool HasInputLevel(int level);
+  float GetDelay();
+  void Flush();
+  void SetDrain(bool drain);
+  bool IsDrained();
+  void SetRR(double rr);
+  double GetRR();
+  void FillBuffer();
+  bool DoesNormalize();
+  void ForceResampler(bool force);
+  void SetDSPConfig(bool usedsp, bool bypassdsp);
+  bool HasWork();
+  CActiveAEBufferPool *GetResampleBuffers();
+  CActiveAEBufferPool *GetAtempoBuffers();
+  
+  AEAudioFormat m_inputFormat;
+  std::deque<CSampleBuffer*> m_outputSamples;
+  std::deque<CSampleBuffer*> m_inputSamples;
+
+protected:
+  CActiveAEBufferPoolResample *m_resampleBuffers;
+  CActiveAEBufferPoolAtempo *m_atempoBuffers;
+};
 
 class CActiveAEStream : public IAEStream
 {
@@ -107,7 +139,7 @@ protected:
 
 public:
   virtual unsigned int GetSpace();
-  virtual unsigned int AddData(uint8_t* const *data, unsigned int offset, unsigned int frames, double pts = 0.0);
+  virtual unsigned int AddData(const uint8_t* const *data, unsigned int offset, unsigned int frames, double pts = 0.0);
   virtual double GetDelay();
   virtual CAESyncInfo GetSyncInfo();
   virtual bool IsBuffering();
@@ -176,7 +208,7 @@ protected:
 
   // only accessed by engine
   CActiveAEBufferPool *m_inputBuffers;
-  CActiveAEBufferPoolResample *m_resampleBuffers;
+  CActiveAEStreamBuffers *m_processingBuffers;
   std::deque<CSampleBuffer*> m_processingSamples;
   CActiveAEDataProtocol *m_streamPort;
   CEvent m_inMsgEvent;
@@ -195,6 +227,7 @@ protected:
   int m_profile;
   int m_resampleMode;
   double m_resampleIntegral;
+  double m_clockSpeed;
   enum AVMatrixEncoding m_matrixEncoding;
   enum AVAudioServiceType m_audioServiceType;
   bool m_forceResampler;

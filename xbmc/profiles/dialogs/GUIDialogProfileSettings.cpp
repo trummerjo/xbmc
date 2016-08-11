@@ -101,7 +101,7 @@ bool CGUIDialogProfileSettings::ShowForProfile(unsigned int iProfile, bool first
     std::string userDir = defaultDir;
     if (GetProfilePath(userDir, false)) // can't be the master user
     {
-      if (!StringUtils::StartsWith(userDir, defaultDir)) // user chose a different folder
+      if (!URIUtils::PathHasParent(userDir, defaultDir)) // user chose a different folder
         XFILE::CDirectory::Remove(URIUtils::AddFileToFolder("special://masterprofile/", defaultDir));
     }
     dialog->m_directory = userDir;
@@ -141,7 +141,7 @@ bool CGUIDialogProfileSettings::ShowForProfile(unsigned int iProfile, bool first
       // check for old profile settings
       CProfile profile(dialog->m_directory, dialog->m_name, CProfilesManager::GetInstance().GetNextProfileId());
       CProfilesManager::GetInstance().AddProfile(profile);
-      bool exists = XFILE::CFile::Exists(URIUtils::AddFileToFolder("special://masterprofile/", dialog->m_directory + "/guisettings.xml"));
+      bool exists = XFILE::CFile::Exists(URIUtils::AddFileToFolder("special://masterprofile/", dialog->m_directory, "guisettings.xml"));
 
       if (exists && !CGUIDialogYesNo::ShowAndGetInput(CVariant{20058}, CVariant{20104}))
         exists = false;
@@ -154,11 +154,11 @@ bool CGUIDialogProfileSettings::ShowForProfile(unsigned int iProfile, bool first
         if (CGUIDialogYesNo::ShowAndGetInput(CVariant{20058}, CVariant{20048}, CVariant{""}, CVariant{""}, CVariant{20044}, CVariant{20064}))
         {
           XFILE::CFile::Copy(URIUtils::AddFileToFolder("special://masterprofile/", "guisettings.xml"),
-                              URIUtils::AddFileToFolder("special://masterprofile/", dialog->m_directory + "/guisettings.xml"));
+                              URIUtils::AddFileToFolder("special://masterprofile/", dialog->m_directory, "guisettings.xml"));
         }
       }
 
-      exists = XFILE::CFile::Exists(URIUtils::AddFileToFolder("special://masterprofile/", dialog->m_directory + "/sources.xml"));
+      exists = XFILE::CFile::Exists(URIUtils::AddFileToFolder("special://masterprofile/", dialog->m_directory, "sources.xml"));
       if (exists && !CGUIDialogYesNo::ShowAndGetInput(CVariant{20058}, CVariant{20106}))
         exists = false;
 
@@ -170,7 +170,7 @@ bool CGUIDialogProfileSettings::ShowForProfile(unsigned int iProfile, bool first
           if (CGUIDialogYesNo::ShowAndGetInput(CVariant{20058}, CVariant{20071}, CVariant{""}, CVariant{""}, CVariant{20044}, CVariant{20064}))
           {
             XFILE::CFile::Copy(URIUtils::AddFileToFolder("special://masterprofile/", "sources.xml"),
-                                URIUtils::AddFileToFolder("special://masterprofile/", dialog->m_directory + "/sources.xml"));
+                                URIUtils::AddFileToFolder("special://masterprofile/", dialog->m_directory, "sources.xml"));
           }
       }
     }

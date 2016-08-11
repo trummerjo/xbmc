@@ -21,7 +21,7 @@ CWinSystemX11GLESContext::~CWinSystemX11GLESContext()
 void CWinSystemX11GLESContext::PresentRenderImpl(bool rendered)
 {
   if (rendered)
-    m_pGLContext->SwapBuffers(m_iVSyncMode);
+    m_pGLContext->SwapBuffers();
 
   if (m_delayDispReset && m_dispResetTimer.IsTimePast())
   {
@@ -35,7 +35,7 @@ void CWinSystemX11GLESContext::PresentRenderImpl(bool rendered)
 
 void CWinSystemX11GLESContext::SetVSyncImpl(bool enable)
 {
-  m_pGLContext->SetVSync(enable, m_iVSyncMode);
+  m_pGLContext->SetVSync(enable);
 }
 
 bool CWinSystemX11GLESContext::IsExtSupported(const char* extension)
@@ -55,7 +55,7 @@ bool CWinSystemX11GLESContext::SetWindow(int width, int height, bool fullscreen,
     RefreshGLContext(m_currentOutput.compare(output) != 0);
     XSync(m_dpy, FALSE);
     g_graphicsContext.Clear(0);
-    g_graphicsContext.Flip(true);
+    g_graphicsContext.Flip(true, false);
     ResetVSync();
 
     m_windowDirty = false;

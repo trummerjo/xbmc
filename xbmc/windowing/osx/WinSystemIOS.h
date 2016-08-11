@@ -24,6 +24,9 @@
 #define WINDOW_SYSTEM_IOSEGL_H
 
 #if defined(TARGET_DARWIN_IOS)
+#include <string>
+#include <vector>
+
 #include "windowing/WinSystem.h"
 #include "rendering/gles/RenderSystemGLES.h"
 #include "utils/GlobalsHandling.h"
@@ -69,10 +72,11 @@ public:
   virtual int GetNumScreens();    
   virtual int GetCurrentScreen();
   
-          bool InitDisplayLink(CVideoSyncIos *syncImpl);
-          void DeinitDisplayLink(void);
-          void OnAppFocusChange(bool focus);
-          bool IsBackgrounded() const { return m_bIsBackgrounded; }
+  bool InitDisplayLink(CVideoSyncIos *syncImpl);
+  void DeinitDisplayLink(void);
+  void OnAppFocusChange(bool focus);
+  bool IsBackgrounded() const { return m_bIsBackgrounded; }
+  void* GetEAGLContextObj();
 
 protected:
   virtual void PresentRenderImpl(bool rendered);

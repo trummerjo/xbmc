@@ -128,8 +128,8 @@ static KeyMap keyMap[] = {
   { AKEYCODE_BUTTON_X        , XBMCK_LAST },
   { AKEYCODE_BUTTON_Y        , XBMCK_LAST },
   { AKEYCODE_BUTTON_Z        , XBMCK_LAST },
-  { AKEYCODE_BUTTON_L1       , XBMCK_LAST },
-  { AKEYCODE_BUTTON_R1       , XBMCK_LAST },
+  { AKEYCODE_BUTTON_L1       , XBMCK_PAGEDOWN },
+  { AKEYCODE_BUTTON_R1       , XBMCK_PAGEUP },
   { AKEYCODE_BUTTON_L2       , XBMCK_LAST },
   { AKEYCODE_BUTTON_R2       , XBMCK_LAST },
   { AKEYCODE_BUTTON_THUMBL   , XBMCK_LAST },
@@ -245,7 +245,8 @@ bool CAndroidKey::onKeyboardEvent(AInputEvent *event)
     modifiers |= XBMCKMOD_LCTRL;
   if (state & AMETA_CTRL_RIGHT_ON)
     modifiers |= XBMCKMOD_RCTRL;
-  /* TODO:
+  //! @todo implement
+  /*
   if (state & AMETA_SYM_ON)
     modifiers |= 0x000?;*/
 

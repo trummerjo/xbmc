@@ -34,14 +34,19 @@ std::unique_ptr<CInputStream> CInputStream::FromExtension(AddonProps props, cons
 {
   std::string listitemprops = CAddonMgr::GetInstance().GetExtValue(ext->configuration, "@listitemprops");
   std::string extensions = CAddonMgr::GetInstance().GetExtValue(ext->configuration, "@extension");
+  std::string protocols = CAddonMgr::GetInstance().GetExtValue(ext->configuration, "@protocols");
   std::string name(ext->plugin->identifier);
-  return std::unique_ptr<CInputStream>(new CInputStream(std::move(props),
-                                                        std::move(name),
-                                                        std::move(listitemprops),
-                                                        std::move(extensions)));
+  std::unique_ptr<CInputStream> istr(new CInputStream(props, name, listitemprops,
+                                                      extensions, protocols));
+  istr->CheckConfig();
+  return istr;
 }
 
-CInputStream::CInputStream(AddonProps props, std::string name, std::string listitemprops, std::string extensions)
+CInputStream::CInputStream(const AddonProps& props,
+                           const std::string& name,
+                           const std::string& listitemprops,
+                           const std::string& extensions,
+                           const std::string& protocols)
 : InputStreamDll(std::move(props))
 {
   m_fileItemProps = StringUtils::Tokenize(listitemprops, "|");
@@ -57,6 +62,34 @@ CInputStream::CInputStream(AddonProps props, std::string name, std::string listi
     StringUtils::Trim(ext);
   }
 
+  m_protocolsList = StringUtils::Tokenize(protocols, "|");
+  for (auto &ext : m_protocolsList)
+  {
+    StringUtils::Trim(ext);
+  }
+}
+
+bool CInputStream::CheckAPIVersion()
+{
+  std::string dllVersion = m_pStruct->GetApiVersion();
+  if (dllVersion.compare(INPUTSTREAM_API_VERSION) != 0)
+  {
+    CLog::Log(LOGERROR, "CInputStream::CheckAPIVersion - API version does not match");
+    return false;
+  }
+
+  return true;
+}
+
+void CInputStream::SaveSettings()
+{
+  CAddon::SaveSettings();
+  if (!m_bIsChild)
+    UpdateConfig();
+}
+
+void CInputStream::CheckConfig()
+{
   bool hasConfig = false;
 
   {
@@ -69,26 +102,23 @@ CInputStream::CInputStream(AddonProps props, std::string name, std::string listi
     UpdateConfig();
 }
 
-void CInputStream::SaveSettings()
-{
-  CAddon::SaveSettings();
-  if (!m_bIsChild)
-    UpdateConfig();
-}
-
 void CInputStream::UpdateConfig()
 {
   std::string pathList;
-  Create();
-  try
+  ADDON_STATUS status = Create();
+
+  if (status != ADDON_STATUS_PERMANENT_FAILURE)
   {
-    pathList = m_pStruct->GetPathList();
+    try
+    {
+      pathList = m_pStruct->GetPathList();
+    }
+    catch (std::exception &e)
+    {
+      CLog::Log(LOGERROR, "CInputStream::Supports - could not get a list of paths. Reason: %s", e.what());
+    }
+    Destroy();
   }
-  catch (std::exception &e)
-  {
-    CLog::Log(LOGERROR, "CInputStream::Supports - could not get a list of paths. Reason: %s", e.what());
-  }
-  Destroy();
 
   Config config;
   config.m_pathList = StringUtils::Tokenize(pathList, "|");
@@ -103,6 +133,10 @@ void CInputStream::UpdateConfig()
     config.m_parentBusy = false;
   else
     config.m_parentBusy = it->second.m_parentBusy;
+
+  config.m_ready = true;
+  if (status == ADDON_STATUS_PERMANENT_FAILURE)
+    config.m_ready = false;
 
   m_configMap[ID()] = config;
 }
@@ -123,6 +157,16 @@ bool CInputStream::UseParent()
 
 bool CInputStream::Supports(const CFileItem &fileitem)
 {
+  {
+    CSingleLock lock(m_parentSection);
+
+    auto it = m_configMap.find(ID());
+    if (it == m_configMap.end())
+      return false;
+    if (!it->second.m_ready)
+      return false;
+  }
+
   // check if a specific inputstream addon is requested
   CVariant addon = fileitem.GetProperty("inputstreamaddon");
   if (!addon.isNull())
@@ -130,6 +174,15 @@ bool CInputStream::Supports(const CFileItem &fileitem)
     if (addon.asString() != ID())
       return false;
     else
+      return true;
+  }
+
+  // check protocols
+  std::string protocol = fileitem.GetURL().GetProtocol();
+  if (!protocol.empty())
+  {
+    if (std::find(m_protocolsList.begin(),
+                  m_protocolsList.end(), protocol) != m_protocolsList.end())
       return true;
   }
 
@@ -335,7 +388,7 @@ void CInputStream::UpdateStreams()
     }
     else if (stream.m_streamType == INPUTSTREAM_INFO::TYPE_SUBTITLE)
     {
-      // TODO needs identifier in INPUTSTREAM_INFO
+      //! @todo needs identifier in INPUTSTREAM_INFO
       continue;
     }
     else
@@ -408,22 +461,6 @@ void CInputStream::EnableStream(int iStreamId, bool enable)
   catch (std::exception &e)
   {
     CLog::Log(LOGERROR, "CInputStream::EnableStream - error. Reason: %s", e.what());
-  }
-}
-
-void CInputStream::EnableStreamAtPTS(int iStreamId, uint64_t pts)
-{
-  std::map<int, CDemuxStream*>::iterator it = m_streams.find(iStreamId);
-  if (it == m_streams.end())
-    return;
-
-  try
-  {
-    m_pStruct->EnableStreamAtPTS(it->second->uniqueId, pts);
-  }
-  catch (std::exception &e)
-  {
-    CLog::Log(LOGERROR, "CInputStream::EnableStreamAtPTS - error. Reason: %s", e.what());
   }
 }
 

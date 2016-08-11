@@ -18,11 +18,9 @@ set(SOURCES AddonsDirectory.cpp
             File.cpp
             FileDirectoryFactory.cpp
             FileFactory.cpp
-            FileReaderFile.cpp
             FTPDirectory.cpp
             FTPParse.cpp
             HTTPDirectory.cpp
-            HTTPFile.cpp
             IDirectory.cpp
             IFile.cpp
             ImageFile.cpp
@@ -30,7 +28,6 @@ set(SOURCES AddonsDirectory.cpp
             ISO9660Directory.cpp
             ISOFile.cpp
             LibraryDirectory.cpp
-            MemBufferCache.cpp
             MultiPathDirectory.cpp
             MultiPathFile.cpp
             MusicDatabaseDirectory.cpp
@@ -102,9 +99,7 @@ set(HEADERS AddonsDirectory.h
             FileCache.h
             FileDirectoryFactory.h
             FileFactory.h
-            FileReaderFile.h
             HTTPDirectory.h
-            HTTPFile.h
             IDirectory.h
             IFile.h
             IFileDirectory.h
@@ -114,7 +109,6 @@ set(HEADERS AddonsDirectory.h
             ISOFile.h
             iso9660.h
             LibraryDirectory.h
-            MemBufferCache.h
             MultiPathDirectory.h
             MultiPathFile.h
             MusicDatabaseDirectory.h
@@ -186,21 +180,7 @@ if(BLURAY_FOUND)
                       BlurayFile.h)
 endif()
 
-include_directories(${CORE_SOURCE_DIR}/lib/libUPnP
-                    ${CORE_SOURCE_DIR}/lib/libUPnP/Platinum/Source/Core
-                    ${CORE_SOURCE_DIR}/lib/libUPnP/Platinum/Source/Platinum
-                    ${CORE_SOURCE_DIR}/lib/libUPnP/Platinum/Source/Devices/MediaConnect
-                    ${CORE_SOURCE_DIR}/lib/libUPnP/Platinum/Source/Devices/MediaRenderer
-                    ${CORE_SOURCE_DIR}/lib/libUPnP/Platinum/Source/Devices/MediaServer
-                    ${CORE_SOURCE_DIR}/lib/libUPnP/Platinum/Source/Extras
-                    ${CORE_SOURCE_DIR}/lib/libUPnP/Neptune/Source/System/Posix
-                    ${CORE_SOURCE_DIR}/lib/libUPnP/Neptune/Source/Core)
-
-add_definitions(-DNPT_CONFIG_ENABLE_LOGGING)
-
 core_add_library(filesystem)
-add_dependencies(filesystem libcpluff)
-
-if(ENABLE_INTERNAL_FFMPEG)
-  add_dependencies(filesystem ffmpeg)
+if(ENABLE_STATIC_LIBS)
+  target_link_libraries(filesystem PRIVATE upnp)
 endif()

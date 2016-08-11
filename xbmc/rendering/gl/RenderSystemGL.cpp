@@ -105,7 +105,6 @@ void CRenderSystemGL::CheckOpenGLQuirks()
 bool CRenderSystemGL::InitRenderSystem()
 {
   m_bVSync = false;
-  m_iVSyncMode = 0;
   m_bVsyncInit = false;
   m_maxTextureSize = 2048;
   m_renderCaps = 0;
@@ -186,7 +185,7 @@ bool CRenderSystemGL::ResetRenderSystem(int width, int height, bool fullScreen, 
   glEnable(GL_SCISSOR_TEST);
 
   glMatrixProject.Clear();
-  glMatrixModview->LoadIdentity();
+  glMatrixProject->LoadIdentity();
   glMatrixProject->Ortho(0.0f, width-1, height-1, 0.0f, -1.0f, 1.0f);
   glMatrixProject.Load();
 
@@ -290,7 +289,7 @@ bool CRenderSystemGL::IsExtSupported(const char* extension)
   return m_RenderExtensions.find(name) != std::string::npos;
 }
 
-void CRenderSystemGL::PresentRender(bool rendered)
+void CRenderSystemGL::PresentRender(bool rendered, bool videoLayer)
 {
   SetVSync(true);
 
@@ -306,7 +305,7 @@ void CRenderSystemGL::PresentRender(bool rendered)
 
 void CRenderSystemGL::SetVSync(bool enable)
 {
-  if (m_bVSync==enable && m_bVsyncInit == true)
+  if (m_bVSync == enable && m_bVsyncInit == true)
     return;
 
   if (!m_bRenderCreated)
@@ -317,20 +316,10 @@ void CRenderSystemGL::SetVSync(bool enable)
   else
     CLog::Log(LOGINFO, "GL: Disabling VSYNC");
 
-  m_iVSyncMode   = 0;
-  m_iVSyncErrors = 0;
-  m_bVSync       = enable;
-  m_bVsyncInit   = true;
+  m_bVSync = enable;
+  m_bVsyncInit = true;
 
   SetVSyncImpl(enable);
-
-  if (!enable)
-    return;
-
-  if (!m_iVSyncMode)
-    CLog::Log(LOGERROR, "GL: Vertical Blank Syncing unsupported");
-  else
-    CLog::Log(LOGINFO, "GL: Selected vsync mode %d", m_iVSyncMode);
 }
 
 void CRenderSystemGL::FinishPipeline()
@@ -353,8 +342,7 @@ void CRenderSystemGL::CaptureStateBlock()
   glMatrixTexture.Push();
 
   glDisable(GL_SCISSOR_TEST); // fixes FBO corruption on Macs
-  if (glActiveTextureARB)
-    glActiveTextureARB(GL_TEXTURE0_ARB);
+  glActiveTextureARB(GL_TEXTURE0_ARB);
   glDisable(GL_TEXTURE_2D);
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
   glColor3f(1.0, 1.0, 1.0);
@@ -371,8 +359,7 @@ void CRenderSystemGL::ApplyStateBlock()
   glMatrixModview.PopLoad();
   glMatrixTexture.PopLoad();
 
-  if (glActiveTextureARB)
-    glActiveTextureARB(GL_TEXTURE0_ARB);
+  glActiveTextureARB(GL_TEXTURE0_ARB);
   glEnable(GL_TEXTURE_2D);
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
   glEnable(GL_BLEND);

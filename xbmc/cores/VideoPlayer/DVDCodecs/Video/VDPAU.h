@@ -57,8 +57,10 @@
 #include "threads/Thread.h"
 #include "utils/ActorProtocol.h"
 #include "guilib/Geometry.h"
+#include <deque>
 #include <list>
 #include <map>
+#include <vector>
 
 extern "C" {
 #include "libavutil/avutil.h"
@@ -67,6 +69,8 @@ extern "C" {
 
 #define FULLHD_WIDTH                       1920
 #define MAX_PIC_Q_LENGTH                   20 //for non-interop_yuv this controls the max length of the decoded pic to render completion Q
+
+class CProcessInfo;
 
 namespace VDPAU
 {
@@ -180,6 +184,7 @@ struct CVdpauConfig
   uint32_t maxReferences;
   bool useInteropYuv;
   CVDPAUContext *context;
+  CProcessInfo *processInfo;
 };
 
 /**
@@ -328,7 +333,6 @@ protected:
   float m_Contrast;
   float m_NoiseReduction;
   float m_Sharpness;
-  int m_DeintMode;
   int m_Deint;
   int m_Upscale;
   bool m_SeenInterlaceFlag;
@@ -554,7 +558,7 @@ public:
     uint32_t aux; /* optional extra parameter... */
   };
 
-  CDecoder();
+  CDecoder(CProcessInfo& processInfo);
   virtual ~CDecoder();
 
   virtual bool Open      (AVCodecContext* avctx, AVCodecContext* mainctx, const enum AVPixelFormat, unsigned int surfaces = 0);
@@ -621,6 +625,7 @@ protected:
   CVdpauRenderPicture *m_presentPicture;
 
   int m_codecControl;
+  CProcessInfo& m_processInfo;
 };
 
 }

@@ -20,7 +20,7 @@
  */
 
 #include "windows/GUIMediaWindow.h"
-#include "pvr/channels/PVRChannelGroupsContainer.h"
+#include "utils/Observer.h"
 
 #define CONTROL_BTNVIEWASICONS            2
 #define CONTROL_BTNSORTBY                 3
@@ -53,6 +53,12 @@ namespace PVR
     EPG_SELECT_ACTION_RECORD         = 3,
     EPG_SELECT_ACTION_PLAY_RECORDING = 4,
   };
+
+  class CPVRChannelGroup;
+  typedef std::shared_ptr<CPVRChannelGroup> CPVRChannelGroupPtr;
+
+  class CPVRTimerInfoTag;
+  typedef std::shared_ptr<CPVRTimerInfoTag> CPVRTimerInfoTagPtr;
 
   class CGUIWindowPVRBase : public CGUIMediaWindow, public Observer
   {
@@ -91,7 +97,7 @@ namespace PVR
 
     virtual std::string GetDirectoryPath(void) = 0;
     virtual CPVRChannelGroupPtr GetGroup(void);
-    virtual void SetGroup(CPVRChannelGroupPtr group);
+    virtual void SetGroup(const CPVRChannelGroupPtr &group);
 
     virtual bool ActionShowTimerRule(CFileItem *item);
     virtual bool ActionToggleTimer(CFileItem *item);
@@ -107,14 +113,14 @@ namespace PVR
     virtual bool UpdateEpgForChannel(CFileItem *item);
     virtual void UpdateSelectedItemPath();
     virtual bool IsValidMessage(CGUIMessage& message);
-    void CheckResumeRecording(CFileItem *item);
+    bool CheckResumeRecording(CFileItem *item);
 
     bool OnContextButtonEditTimer(CFileItem *item, CONTEXT_BUTTON button);
     bool OnContextButtonEditTimerRule(CFileItem *item, CONTEXT_BUTTON button);
     bool OnContextButtonDeleteTimerRule(CFileItem *item, CONTEXT_BUTTON button);
 
-    virtual void RegisterObservers(void) {};
-    virtual void UnregisterObservers(void) {};
+    virtual void RegisterObservers(void);
+    virtual void UnregisterObservers(void);
 
     static CCriticalSection m_selectedItemPathsLock;
     static std::string m_selectedItemPaths[2];

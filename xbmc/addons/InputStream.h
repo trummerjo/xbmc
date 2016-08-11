@@ -42,10 +42,15 @@ namespace ADDON
     explicit CInputStream(AddonProps props)
       : InputStreamDll(std::move(props))
     {};
-    CInputStream(AddonProps props, std::string name, std::string listitemprops, std::string extensions);
+    CInputStream(const AddonProps& props,
+                 const std::string& name,
+                 const std::string& listitemprops,
+                 const std::string& extensions,
+                 const std::string& protocols);
     virtual ~CInputStream() {}
 
     virtual void SaveSettings() override;
+    virtual bool CheckAPIVersion(void) override;
 
     bool UseParent();
     bool Supports(const CFileItem &fileitem);
@@ -57,7 +62,6 @@ namespace ADDON
     bool HasDisplayTime() { return m_caps.m_supportsIDisplayTime; };
     bool CanPause() { return m_caps.m_supportsPause; };
     bool CanSeek() { return m_caps.m_supportsSeek; };
-    bool CanEnableAtPTS() { return m_caps.m_supportsEnableAtPTS; };
 
     // IDisplayTime
     int GetTotalTime();
@@ -76,7 +80,6 @@ namespace ADDON
     void FlushDemux();
     void SetSpeed(int iSpeed);
     void EnableStream(int iStreamId, bool enable);
-    void EnableStreamAtPTS(int iStreamId, uint64_t pts);
     void SetVideoResolution(int width, int height);
 
     // stream
@@ -91,9 +94,11 @@ namespace ADDON
     void UpdateStreams();
     void DisposeStreams();
     void UpdateConfig();
+    void CheckConfig();
 
     std::vector<std::string> m_fileItemProps;
     std::vector<std::string> m_extensionsList;
+    std::vector<std::string> m_protocolsList;
     INPUTSTREAM_CAPABILITIES m_caps;
     std::map<int, CDemuxStream*> m_streams;
 
@@ -103,6 +108,7 @@ namespace ADDON
     {
       std::vector<std::string> m_pathList;
       bool m_parentBusy;
+      bool m_ready;
     };
     static std::map<std::string, Config> m_configMap;
   };

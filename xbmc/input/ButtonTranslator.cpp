@@ -87,7 +87,8 @@ static const ActionMapping actions[] =
     { "showsubtitles"            , ACTION_SHOW_SUBTITLES },
     { "nextsubtitle"             , ACTION_NEXT_SUBTITLE },
     { "cyclesubtitle"            , ACTION_CYCLE_SUBTITLE },
-    { "codecinfo"                , ACTION_SHOW_CODEC },
+    { "playerdebug"              , ACTION_PLAYER_DEBUG },
+    { "playerprocessinfo"        , ACTION_PLAYER_PROCESS_INFO },
     { "nextpicture"              , ACTION_NEXT_PICTURE },
     { "previouspicture"          , ACTION_PREV_PICTURE },
     { "zoomout"                  , ACTION_ZOOM_OUT },
@@ -297,12 +298,9 @@ static const ActionMapping windows[] =
     { "programs"                 , WINDOW_PROGRAMS },
     { "pictures"                 , WINDOW_PICTURES },
     { "filemanager"              , WINDOW_FILES },
-    { "files"                    , WINDOW_FILES },                      // backward compat
     { "settings"                 , WINDOW_SETTINGS_MENU },
-    { "music"                    , WINDOW_MUSIC },
-    { "video"                    , WINDOW_VIDEOS },
+    { "music"                    , WINDOW_MUSIC_NAV },
     { "videos"                   , WINDOW_VIDEO_NAV },
-    { "pvr"                      , WINDOW_TV_CHANNELS },                // backward compat
     { "tvchannels"               , WINDOW_TV_CHANNELS },
     { "tvrecordings"             , WINDOW_TV_RECORDINGS },
     { "tvguide"                  , WINDOW_TV_GUIDE },
@@ -329,21 +327,12 @@ static const ActionMapping windows[] =
     { "systeminfo"               , WINDOW_SYSTEM_INFORMATION },
     { "testpattern"              , WINDOW_TEST_PATTERN },
     { "screencalibration"        , WINDOW_SCREEN_CALIBRATION },
-    { "guicalibration"           , WINDOW_SCREEN_CALIBRATION },        // backward compat
-    { "picturessettings"         , WINDOW_SETTINGS_MYPICTURES },
-    { "programssettings"         , WINDOW_SETTINGS_MYPROGRAMS },
-    { "weathersettings"          , WINDOW_SETTINGS_MYWEATHER },
-    { "musicsettings"            , WINDOW_SETTINGS_MYMUSIC },
     { "systemsettings"           , WINDOW_SETTINGS_SYSTEM },
-    { "videossettings"           , WINDOW_SETTINGS_MYVIDEOS },
-    { "networksettings"          , WINDOW_SETTINGS_SERVICE },          // backward compat
     { "servicesettings"          , WINDOW_SETTINGS_SERVICE },
-    { "appearancesettings"       , WINDOW_SETTINGS_APPEARANCE },
     { "pvrsettings"              , WINDOW_SETTINGS_MYPVR },
-    { "tvsettings"               , WINDOW_SETTINGS_MYPVR },            // backward compat
-    { "scripts"                  , WINDOW_PROGRAMS },                  // backward compat
-    { "videofiles"               , WINDOW_VIDEO_FILES },
-    { "videolibrary"             , WINDOW_VIDEO_NAV },
+    { "playersettings"           , WINDOW_SETTINGS_PLAYER },
+    { "mediasettings"            , WINDOW_SETTINGS_MEDIA },
+    { "interfacesettings"        , WINDOW_SETTINGS_INTERFACE },	
     { "videoplaylist"            , WINDOW_VIDEO_PLAYLIST },
     { "loginscreen"              , WINDOW_LOGIN_SCREEN },
     { "profiles"                 , WINDOW_SETTINGS_PROFILES },
@@ -357,16 +346,16 @@ static const ActionMapping windows[] =
     { "favourites"               , WINDOW_DIALOG_FAVOURITES },
     { "contextmenu"              , WINDOW_DIALOG_CONTEXT_MENU },
     { "notification"             , WINDOW_DIALOG_KAI_TOAST },
-    { "infodialog"               , WINDOW_DIALOG_KAI_TOAST },          // backward compat
     { "numericinput"             , WINDOW_DIALOG_NUMERIC },
     { "gamepadinput"             , WINDOW_DIALOG_GAMEPAD },
     { "shutdownmenu"             , WINDOW_DIALOG_BUTTON_MENU },
     { "playercontrols"           , WINDOW_DIALOG_PLAYER_CONTROLS },
+    { "playerprocessinfo"        , WINDOW_DIALOG_PLAYER_PROCESS_INFO },
     { "seekbar"                  , WINDOW_DIALOG_SEEK_BAR },
     { "musicosd"                 , WINDOW_DIALOG_MUSIC_OSD },
     { "addonsettings"            , WINDOW_DIALOG_ADDON_SETTINGS },
-    { "visualisationsettings"    , WINDOW_DIALOG_ADDON_SETTINGS },     // backward compat
     { "visualisationpresetlist"  , WINDOW_DIALOG_VIS_PRESET_LIST },
+    { "osdcmssettings"           , WINDOW_DIALOG_CMS_OSD_SETTINGS },
     { "osdvideosettings"         , WINDOW_DIALOG_VIDEO_OSD_SETTINGS },
     { "osdaudiosettings"         , WINDOW_DIALOG_AUDIO_OSD_SETTINGS },
     { "audiodspmanager"          , WINDOW_DIALOG_AUDIO_DSP_MANAGER },
@@ -389,8 +378,6 @@ static const ActionMapping windows[] =
     { "addoninformation"         , WINDOW_DIALOG_ADDON_INFO },
     { "subtitlesearch"           , WINDOW_DIALOG_SUBTITLES },
     { "musicplaylist"            , WINDOW_MUSIC_PLAYLIST },
-    { "musicfiles"               , WINDOW_MUSIC_FILES },
-    { "musiclibrary"             , WINDOW_MUSIC_NAV },
     { "musicplaylisteditor"      , WINDOW_MUSIC_PLAYLIST_EDITOR },
     { "teletext"                 , WINDOW_DIALOG_OSD_TELETEXT },
     { "selectdialog"             , WINDOW_DIALOG_SELECT },
@@ -778,6 +765,54 @@ int CButtonTranslator::TranslateLircRemoteString(const char* szDevice, const cha
   return TranslateRemoteString((*it2).second.c_str());
 }
 
+int CButtonTranslator::GetCustomControllerActionCode(int windowId, int buttonId, const CustomControllerWindowMap *windowMap, std::string& strAction) const
+{
+  int action = 0;
+  
+  auto it = windowMap->find(windowId);
+  if (it != windowMap->end())
+  {
+    const CustomControllerButtonMap &buttonMap = it->second;
+    auto it2 = buttonMap.find(buttonId);
+    if (it2 != buttonMap.end())
+    {
+      strAction = it2->second;
+      TranslateActionString(strAction.c_str(), action);
+    }
+  }
+  
+  return action;
+}
+
+bool CButtonTranslator::TranslateCustomControllerString(int windowId, const std::string& controllerName, int buttonId, int& action, std::string& strAction)
+{
+  // resolve the correct custom controller
+  auto it = m_customControllersMap.find(controllerName);
+  if (it == m_customControllersMap.end())
+  {
+    return false;
+  }
+  
+  const CustomControllerWindowMap *wmap = &it->second;
+  
+  // try to get the action from the current window
+  action = GetCustomControllerActionCode(windowId, buttonId, wmap, strAction);
+  
+  // if it's invalid, try to get it from a fallback window or the global map
+  if (action == 0)
+  {
+    int fallbackWindow = GetFallbackWindow(windowId);
+    if (fallbackWindow > -1)
+      action = GetCustomControllerActionCode(fallbackWindow, buttonId, wmap, strAction);
+    // still no valid action? use global map
+    if (action == 0)
+      action = GetCustomControllerActionCode(-1, buttonId, wmap, strAction);
+  }
+  
+  return (action > 0);
+}
+
+
 bool CButtonTranslator::TranslateTouchAction(int window, int touchAction, int touchPointers, int &action, std::string &actionString)
 {
   action = 0;
@@ -967,6 +1002,50 @@ void CButtonTranslator::MapAction(uint32_t buttonCode, const char *szAction, but
   }
 }
 
+void CButtonTranslator::MapCustomControllerActions(int windowID, TiXmlNode *pCustomController)
+{
+  CustomControllerButtonMap buttonMap;
+  std::string controllerName;
+  
+  TiXmlElement *pController = pCustomController->ToElement();
+  if (pController)
+  {
+    // transform loose name to new family, including altnames
+    if(pController->Attribute("name"))
+    {
+      controllerName = pController->Attribute("name");
+    }
+    else
+    {
+      CLog::Log(LOGERROR, "Missing attribute \"name\" for tag \"customcontroller\"");
+      return;
+    }
+  }
+  
+  // parse map
+  TiXmlElement *pButton = pCustomController->FirstChildElement();
+  int id = 0;
+  while (pButton)
+  {
+    std::string action;
+    if (!pButton->NoChildren())
+      action = pButton->FirstChild()->ValueStr();
+    
+    if ((pButton->QueryIntAttribute("id", &id) == TIXML_SUCCESS) && id >= 0)
+    {
+      buttonMap[id] = action;
+    }
+    else
+      CLog::Log(LOGERROR, "Error reading customController map element, Invalid id: %d", id);
+    
+    pButton = pButton->NextSiblingElement();
+  }
+  
+  // add/overwrite button with mapped actions
+  for (auto button : buttonMap)
+    m_customControllersMap[controllerName][windowID][button.first] = button.second;
+}
+
 bool CButtonTranslator::HasDeviceType(TiXmlNode *pWindow, std::string type)
 {
   return pWindow->FirstChild(type) != NULL;
@@ -1047,6 +1126,17 @@ void CButtonTranslator::MapWindowActions(TiXmlNode *pWindow, int windowID)
       pDevice = pDevice->NextSibling("touch");
     }
   }
+  
+  if ((pDevice = pWindow->FirstChild("customcontroller")) != NULL)
+  {
+    // map custom controller actions
+    while (pDevice)
+    {
+      MapCustomControllerActions(windowID, pDevice);
+      pDevice = pDevice->NextSibling("customcontroller");
+    }
+  }
+
 }
 
 bool CButtonTranslator::TranslateActionString(const char *szAction, int &action)
@@ -1388,6 +1478,8 @@ void CButtonTranslator::Clear()
   ClearLircButtonMapEntries();
   lircRemotesMap.clear();
 #endif
+  
+  m_customControllersMap.clear();
 
   m_Loaded = false;
 }

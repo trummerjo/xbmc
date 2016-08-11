@@ -20,9 +20,14 @@
  *
  */
 
-#include "addons/Addon.h"
-#include "windows/GUIMediaWindow.h"
+#include <string>
+#include <vector>
+#include "Addon.h"
+#include "AddonEvents.h"
+#include "RepositoryUpdater.h"
 #include "ThumbLoader.h"
+#include "windows/GUIMediaWindow.h"
+
 
 class CFileItem;
 class CFileItemList;
@@ -72,6 +77,8 @@ protected:
 private:
   void SetProperties();
   void UpdateStatus(const CFileItemPtr& item);
+  void OnEvent(const ADDON::CRepositoryUpdater::RepositoryUpdated& event);
+  void OnEvent(const ADDON::AddonEvent& event);
   CProgramThumbLoader m_thumbLoader;
 };
 

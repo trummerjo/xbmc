@@ -30,7 +30,7 @@
 #include "guilib/GUIWindowManager.h"
 #ifdef HAS_DVD_DRIVE
 #ifndef TARGET_WINDOWS
-// TODO: switch all ports to use auto sources
+//! @todo switch all ports to use auto sources
 #include <map>
 #include <utility>
 #include "DetectDVDType.h"
@@ -314,7 +314,7 @@ void CMediaManager::RemoveAutoSource(const CMediaSource &share)
 
 /////////////////////////////////////////////////////////////
 // AutoSource status functions:
-// - TODO: translate cdda://<device>/
+//! @todo translate cdda://<device>/
 
 std::string CMediaManager::TranslateDevicePath(const std::string& devicePath, bool bReturnAsDevice)
 {
@@ -347,7 +347,7 @@ bool CMediaManager::IsDiscInDrive(const std::string& devicePath)
   if(!m_bhasoptical)
     return false;
 
-  std::string strDevice = TranslateDevicePath(devicePath, true);
+  std::string strDevice = TranslateDevicePath(devicePath, false);
   std::map<std::string,CCdInfo*>::iterator it;
   CSingleLock waitLock(m_muAutoSource);
   it = m_mapCdInfo.find(strDevice);
@@ -357,7 +357,7 @@ bool CMediaManager::IsDiscInDrive(const std::string& devicePath)
     return false;
 #else
   if(URIUtils::IsDVD(devicePath) || devicePath.empty())
-    return MEDIA_DETECT::CDetectDVDMedia::IsDiscInDrive();   // TODO: switch all ports to use auto sources
+    return MEDIA_DETECT::CDetectDVDMedia::IsDiscInDrive();   //! @todo switch all ports to use auto sources
   else
     return true; // Assume other paths to be mounted already
 #endif
@@ -379,7 +379,7 @@ bool CMediaManager::IsAudio(const std::string& devicePath)
 
   return false;
 #else
-  // TODO: switch all ports to use auto sources
+  //! @todo switch all ports to use auto sources
   MEDIA_DETECT::CCdInfo* pInfo = MEDIA_DETECT::CDetectDVDMedia::GetCdInfo();
   if (pInfo != NULL && pInfo->IsAudio(1))
     return true;
@@ -439,7 +439,7 @@ CCdInfo* CMediaManager::GetCdInfo(const std::string& devicePath)
   if(!m_bhasoptical)
     return NULL;
   
-  std::string strDevice = TranslateDevicePath(devicePath, true);
+  std::string strDevice = TranslateDevicePath(devicePath, false);
   std::map<std::string,CCdInfo*>::iterator it;
   {
     CSingleLock waitLock(m_muAutoSource);
@@ -468,7 +468,7 @@ bool CMediaManager::RemoveCdInfo(const std::string& devicePath)
   if(!m_bhasoptical)
     return false;
 
-  std::string strDevice = TranslateDevicePath(devicePath, true);
+  std::string strDevice = TranslateDevicePath(devicePath, false);
 
   std::map<std::string,CCdInfo*>::iterator it;
   CSingleLock waitLock(m_muAutoSource);

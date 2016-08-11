@@ -148,8 +148,6 @@ public:
   {
     iFpsScale = 0;
     iFpsRate = 0;
-    irFpsScale = 0;
-    irFpsRate = 0;
     iHeight = 0;
     iWidth = 0;
     fAspect = 0.0;
@@ -164,8 +162,6 @@ public:
   virtual ~CDemuxStreamVideo() {}
   int iFpsScale; // scale of 1000 and a rate of 29970 will result in 29.97 fps
   int iFpsRate;
-  int irFpsScale;
-  int irFpsRate;
   int iHeight; // height of the stream reported by the demuxer
   int iWidth; // width of the stream reported by the demuxer
   float fAspect; // display aspect of stream
@@ -333,19 +329,9 @@ public:
   virtual std::string GetStreamCodecName(int64_t demuxerId, int iStreamId) { return GetStreamCodecName(iStreamId); };
 
   /*
-  * return true if demuxer supports enabling at a specific PTS
-  */
-  virtual bool SupportsEnableAtPTS(int64_t demuxerId) { return SupportsEnableAtPTS(); };
-
-  /*
    * enable / disable demux stream
    */
   virtual void EnableStream(int64_t demuxerId, int id, bool enable) { EnableStream(id, enable); };
-
-  /*
-  * enable / disable demux stream at given PTS
-  */
-  virtual void EnableStreamAtPTS(int64_t demuxerId, int id, uint64_t pts) { EnableStreamAtPTS(id, pts); };
 
   /*
    * sets desired width / height for video stream
@@ -360,8 +346,6 @@ public:
 
 protected:
   virtual void EnableStream(int id, bool enable) {};
-  virtual void EnableStreamAtPTS(int id, uint64_t pts) {};
-  virtual bool SupportsEnableAtPTS() { return false; };
   virtual CDemuxStream* GetStream(int iStreamId) const = 0;
   virtual std::string GetStreamCodecName(int iStreamId) { return ""; };
 

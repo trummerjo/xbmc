@@ -39,10 +39,10 @@ protected:
   }
 };
 
-TEST_F(TestURIUtils, IsInPath)
+TEST_F(TestURIUtils, PathHasParent)
 {
-  EXPECT_TRUE(URIUtils::IsInPath("/path/to/movie.avi", "/path/to/"));
-  EXPECT_FALSE(URIUtils::IsInPath("/path/to/movie.avi", "/path/2/"));
+  EXPECT_TRUE(URIUtils::PathHasParent("/path/to/movie.avi", "/path/to/"));
+  EXPECT_FALSE(URIUtils::PathHasParent("/path/to/movie.avi", "/path/2/"));
 }
 
 TEST_F(TestURIUtils, GetDirectory)
@@ -461,6 +461,10 @@ TEST_F(TestURIUtils, AddFileToFolder)
 {
   std::string ref = "/path/to/file";
   std::string var = URIUtils::AddFileToFolder("/path/to", "file");
+  EXPECT_STREQ(ref.c_str(), var.c_str());
+
+  ref = "/path/to/file/and/more";
+  var = URIUtils::AddFileToFolder("/path", "to", "file", "and", "more");
   EXPECT_STREQ(ref.c_str(), var.c_str());
 }
 

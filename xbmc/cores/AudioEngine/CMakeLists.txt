@@ -1,14 +1,15 @@
 set(SOURCES AEFactory.cpp
             AEResampleFactory.cpp
             AESinkFactory.cpp
-            DSPAddons/ActiveAEDSP.cpp
-            DSPAddons/ActiveAEDSPAddon.cpp
-            DSPAddons/ActiveAEDSPDatabase.cpp
-            DSPAddons/ActiveAEDSPMode.cpp
-            DSPAddons/ActiveAEDSPProcess.cpp
+            Engines/ActiveAE/AudioDSPAddons/ActiveAEDSP.cpp
+            Engines/ActiveAE/AudioDSPAddons/ActiveAEDSPAddon.cpp
+            Engines/ActiveAE/AudioDSPAddons/ActiveAEDSPDatabase.cpp
+            Engines/ActiveAE/AudioDSPAddons/ActiveAEDSPMode.cpp
+            Engines/ActiveAE/AudioDSPAddons/ActiveAEDSPProcess.cpp
             Encoders/AEEncoderFFmpeg.cpp
             Engines/ActiveAE/ActiveAE.cpp
             Engines/ActiveAE/ActiveAEBuffer.cpp
+            Engines/ActiveAE/ActiveAEFilter.cpp
             Engines/ActiveAE/ActiveAESink.cpp
             Engines/ActiveAE/ActiveAEStream.cpp
             Engines/ActiveAE/ActiveAESound.cpp
@@ -25,14 +26,15 @@ set(SOURCES AEFactory.cpp
 set(HEADERS AEFactory.h
             AEResampleFactory.h
             AESinkFactory.h
-            DSPAddons/ActiveAEDSP.h
-            DSPAddons/ActiveAEDSPAddon.h
-            DSPAddons/ActiveAEDSPDatabase.h
-            DSPAddons/ActiveAEDSPMode.h
-            DSPAddons/ActiveAEDSPProcess.h
+            Engines/ActiveAE/AudioDSPAddons/ActiveAEDSP.h
+            Engines/ActiveAE/AudioDSPAddons/ActiveAEDSPAddon.h
+            Engines/ActiveAE/AudioDSPAddons/ActiveAEDSPDatabase.h
+            Engines/ActiveAE/AudioDSPAddons/ActiveAEDSPMode.h
+            Engines/ActiveAE/AudioDSPAddons/ActiveAEDSPProcess.h
             Encoders/AEEncoderFFmpeg.h
             Engines/ActiveAE/ActiveAE.h
             Engines/ActiveAE/ActiveAEBuffer.h
+            Engines/ActiveAE/ActiveAEFilter.h
             Engines/ActiveAE/ActiveAESink.h
             Engines/ActiveAE/ActiveAESound.h
             Engines/ActiveAE/ActiveAEStream.h
@@ -95,7 +97,7 @@ if(CORE_SYSTEM_NAME STREQUAL rbpi)
                       Sinks/AESinkPi.h)
 endif()
 
-if(CORE_SYSTEM_NAME STREQUAL darwin)
+if(CORE_SYSTEM_NAME STREQUAL osx)
   list(APPEND SOURCES Sinks/AESinkDARWINOSX.cpp
                       Sinks/osx/AEDeviceEnumerationOSX.cpp
                       Sinks/osx/CoreAudioChannelLayout.cpp
@@ -124,11 +126,10 @@ if(CORE_SYSTEM_NAME STREQUAL android)
   list(APPEND HEADERS Sinks/AESinkAUDIOTRACK.h)
 endif()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+if(CORE_SYSTEM_NAME STREQUAL freebsd)
+  list(APPEND SOURCES Sinks/AESinkOSS.cpp)
+  list(APPEND HEADERS Sinks/AESinkOSS.h)
+endif()
 
 core_add_library(audioengine)
-add_dependencies(audioengine libcpluff)
-
-if(ENABLE_INTERNAL_FFMPEG)
-  add_dependencies(audioengine ffmpeg)
-endif()
+target_include_directories(${CORE_LIBRARY} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

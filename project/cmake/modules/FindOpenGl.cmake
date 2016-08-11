@@ -11,10 +11,10 @@
 # OPENGL_DEFINITIONS - the OpenGl definitions
 
 if(PKG_CONFIG_FOUND)
-  pkg_check_modules(PC_OPENGL gl glu)
+  pkg_check_modules(PC_OPENGL gl glu QUIET)
 endif()
 
-if(NOT CORE_SYSTEM_NAME STREQUAL darwin)
+if(NOT CORE_SYSTEM_NAME STREQUAL osx)
   find_path(OPENGL_INCLUDE_DIR GL/gl.h
                                PATHS ${PC_OPENGL_gl_INCLUDEDIR})
   find_library(OPENGL_gl_LIBRARY NAMES GL

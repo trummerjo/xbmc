@@ -27,30 +27,25 @@
 #define WINDOW_PICTURES                   10002
 #define WINDOW_FILES                      10003
 #define WINDOW_SETTINGS_MENU              10004
-#define WINDOW_MUSIC                      10005 // virtual window to return the music start window.
-#define WINDOW_VIDEOS                     10006
 #define WINDOW_SYSTEM_INFORMATION         10007
 #define WINDOW_TEST_PATTERN               10008
 #define WINDOW_SCREEN_CALIBRATION         10011
 
-#define WINDOW_SETTINGS_START             10012
-#define WINDOW_SETTINGS_MYPICTURES        10012
-#define WINDOW_SETTINGS_MYPROGRAMS        10013
-#define WINDOW_SETTINGS_MYWEATHER         10014
-#define WINDOW_SETTINGS_MYMUSIC           10015
+#define WINDOW_SETTINGS_START             10016
 #define WINDOW_SETTINGS_SYSTEM            10016
-#define WINDOW_SETTINGS_MYVIDEOS          10017
-#define WINDOW_SETTINGS_SERVICE           10018 // former (Eden) WINDOW_SETTINGS_NETWORK
-#define WINDOW_SETTINGS_APPEARANCE        10019
+#define WINDOW_SETTINGS_SERVICE           10018
 
-#define WINDOW_SCRIPTS                    10020 // virtual window for backward compatibility
 #define WINDOW_SETTINGS_MYPVR             10021
 
-#define WINDOW_VIDEO_FILES                10024
 #define WINDOW_VIDEO_NAV                  10025
 #define WINDOW_VIDEO_PLAYLIST             10028
 
 #define WINDOW_LOGIN_SCREEN               10029
+
+#define WINDOW_SETTINGS_PLAYER            10030
+#define WINDOW_SETTINGS_MEDIA             10031
+#define WINDOW_SETTINGS_INTERFACE         10032
+
 #define WINDOW_SETTINGS_PROFILES          10034
 #define WINDOW_SKIN_SETTINGS              10035
 
@@ -73,6 +68,7 @@
 #define WINDOW_DIALOG_BUTTON_MENU         10111
 #define WINDOW_DIALOG_PLAYER_CONTROLS     10114
 #define WINDOW_DIALOG_SEEK_BAR            10115
+#define WINDOW_DIALOG_PLAYER_PROCESS_INFO 10116
 #define WINDOW_DIALOG_MUSIC_OSD           10120
 #define WINDOW_DIALOG_VIS_SETTINGS        10121
 #define WINDOW_DIALOG_VIS_PRESET_LIST     10122
@@ -104,9 +100,10 @@
 #define WINDOW_DIALOG_SUBTITLES           10153
 #define WINDOW_DIALOG_AUDIO_DSP_MANAGER   10154
 #define WINDOW_DIALOG_AUDIO_DSP_OSD_SETTINGS 10155
+#define WINDOW_DIALOG_KEYBOARD_TOUCH      10156
+#define WINDOW_DIALOG_CMS_OSD_SETTINGS    10157
 
 #define WINDOW_MUSIC_PLAYLIST             10500
-#define WINDOW_MUSIC_FILES                10501
 #define WINDOW_MUSIC_NAV                  10502
 #define WINDOW_MUSIC_PLAYLIST_EDITOR      10503
 

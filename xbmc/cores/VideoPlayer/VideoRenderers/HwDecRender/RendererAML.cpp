@@ -27,18 +27,18 @@
 #include "cores/VideoPlayer/DVDCodecs/Video/AMLCodec.h"
 #include "utils/log.h"
 #include "utils/GLUtils.h"
+#include "utils/SysfsUtils.h"
 #include "settings/MediaSettings.h"
 #include "windowing/WindowingFactory.h"
 #include "cores/VideoPlayer/VideoRenderers/RenderCapture.h"
 
 CRendererAML::CRendererAML()
 {
-
+  m_prevPts = -1;
 }
 
 CRendererAML::~CRendererAML()
 {
-
 }
 
 bool CRendererAML::RenderCapture(CRenderCapture* capture)
@@ -81,16 +81,6 @@ bool CRendererAML::Supports(EINTERLACEMETHOD method)
   return false;
 }
 
-bool CRendererAML::Supports(EDEINTERLACEMODE mode)
-{
-  if(mode == VS_DEINTERLACEMODE_OFF
-  || mode == VS_DEINTERLACEMODE_AUTO
-  || mode == VS_DEINTERLACEMODE_FORCE)
-    return true;
-
-  return false;
-}
-
 bool CRendererAML::Supports(ESCALINGMETHOD method)
 {
   return false;
@@ -118,7 +108,7 @@ bool CRendererAML::LoadShadersHook()
 {
   CLog::Log(LOGNOTICE, "GL: Using AML render method");
   m_textureTarget = GL_TEXTURE_2D;
-  m_renderMethod = RENDER_FMT_AML;
+  m_renderMethod = RENDER_BYPASS;
   return false;
 }
 
@@ -132,15 +122,19 @@ bool CRendererAML::RenderUpdateVideoHook(bool clear, DWORD flags, DWORD alpha)
   ManageRenderArea();
 
   CDVDAmlogicInfo *amli = static_cast<CDVDAmlogicInfo *>(m_buffers[m_iYV12RenderBuffer].hwDec);
-  if (amli)
+  if (amli && amli->GetOmxPts() != m_prevPts)
   {
+    m_prevPts = amli->GetOmxPts();
+    SysfsUtils::SetInt("/sys/module/amvideo/parameters/omx_pts", amli->GetOmxPts());
+
     CAMLCodec *amlcodec = amli->getAmlCodec();
     if (amlcodec)
       amlcodec->SetVideoRect(m_sourceRect, m_destRect);
   }
 
+  usleep(10000);
+
   return true;
 }
 
 #endif
-

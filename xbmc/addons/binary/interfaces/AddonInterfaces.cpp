@@ -53,7 +53,7 @@ CAddonInterfaces::CAddonInterfaces(CAddon* addon)
     m_helperInputStream(nullptr),
     m_helperPeripheral(nullptr)
 {
-  m_callbacks->libBasePath                  = strdup(CSpecialProtocol::TranslatePath("special://xbmcbin/addons").c_str());
+  m_callbacks->libBasePath                  = strdup(CSpecialProtocol::TranslatePath("special://xbmcbinaddons").c_str());
   m_callbacks->addonData                    = this;
 
   m_callbacks->AddOnLib_RegisterMe          = CAddonInterfaces::AddOnLib_RegisterMe;
@@ -316,7 +316,7 @@ void CAddonInterfaces::OnApplicationMessage(ThreadMessage* pMsg)
   case TMSG_GUI_ADDON_DIALOG:
   {
     if (pMsg->lpVoid)
-    { // TODO: This is ugly - really these binary add-on dialogs should just be normal Kodi dialogs
+    { //! @todo This is ugly - really these binary add-on dialogs should just be normal Kodi dialogs
       switch (pMsg->param1)
       {
       case 1:

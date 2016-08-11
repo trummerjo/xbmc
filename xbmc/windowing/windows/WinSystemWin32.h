@@ -26,6 +26,7 @@
 #include "threads/SystemClock.h"
 #include "windowing/WinSystem.h"
 #include <string>
+#include <vector>
 
 struct MONITOR_DETAILS
 {
@@ -186,6 +187,7 @@ protected:
   void OnDisplayReset();
   void OnDisplayBack();
   void ResolutionChanged();
+  void SetForegroundWindowInternal(HWND hWnd);
 
   HWND m_hWnd;
   std::vector<HWND> m_hBlankWindows;

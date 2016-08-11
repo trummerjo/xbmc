@@ -5,7 +5,7 @@
     android:versionCode="@APP_VERSION_CODE@"
     android:versionName="@APP_VERSION@" >
 
-    <uses-sdk android:minSdkVersion="19" android:targetSdkVersion="22" />
+    <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="22" />
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -87,7 +87,6 @@
         <receiver android:name=".XBMCBroadcastReceiver" >
             <intent-filter>
                 <action android:name="android.intent.action.DREAMING_STOPPED" />
-                <action android:name="android.intent.action.HEADSET_PLUG" />
                 <action android:name="android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED" />
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>

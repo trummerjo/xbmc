@@ -38,6 +38,8 @@ namespace ADDON
   typedef std::vector<AddonPtr> VECADDONS;
   typedef std::vector<AddonPtr>::iterator IVECADDONS;
 
+  const char* const ORIGIN_SYSTEM = "b6a50484-93a0-4afb-a01c-8d17e059feda";
+
 // utils
 std::string TranslateType(TYPE type, bool pretty=false);
 std::string GetIcon(TYPE type);
@@ -54,8 +56,8 @@ void OnPostUnInstall(const AddonPtr& addon);
 class AddonProps
 {
 public:
-  AddonProps() : type(ADDON_UNKNOWN) {};
-  AddonProps(std::string id, TYPE type) : id(std::move(id)), type(type) {}
+  AddonProps() : type(ADDON_UNKNOWN), packageSize(0) {};
+  AddonProps(std::string id, TYPE type) : id(std::move(id)), type(type), packageSize(0) {}
 
   std::string id;
   TYPE type;
@@ -68,11 +70,11 @@ public:
   std::string libname;
   std::string author;
   std::string source;
-  //TODO: fix parts relying on mutating these
-  mutable std::string path;
-  mutable std::string icon;
-  mutable std::string changelog;
-  mutable std::string fanart;
+  std::string path;
+  std::string icon;
+  std::string changelog;
+  std::string fanart;
+  std::vector<std::string> screenshots;
   std::string disclaimer;
   ADDONDEPS dependencies;
   std::string broken;
@@ -80,6 +82,8 @@ public:
   CDateTime installDate;
   CDateTime lastUpdated;
   CDateTime lastUsed;
+  std::string origin;
+  uint64_t packageSize;
 };
 
 
@@ -92,7 +96,6 @@ public:
   TYPE Type() const override { return m_props.type; }
   TYPE FullType() const override { return Type(); }
   bool IsType(TYPE type) const override { return type == m_props.type; }
-  const AddonProps& Props() override { return m_props; }
   std::string ID() const override{ return m_props.id; }
   std::string Name() const override { return m_props.name; }
   bool IsInUse() const override{ return false; };
@@ -107,11 +110,14 @@ public:
   std::string ChangeLog() const override { return m_props.changelog; }
   std::string FanArt() const override { return m_props.fanart; }
   std::string Icon() const override { return m_props.icon; };
+  std::vector<std::string> Screenshots() const override { return m_props.screenshots; };
   std::string Disclaimer() const override { return m_props.disclaimer; }
   std::string Broken() const override { return m_props.broken; }
   CDateTime InstallDate() const override { return m_props.installDate; }
   CDateTime LastUpdated() const override { return m_props.lastUpdated; }
   CDateTime LastUsed() const override { return m_props.lastUsed; }
+  std::string Origin() const override { return m_props.origin; }
+  uint64_t PackageSize() const override { return m_props.packageSize; }
   const InfoMap& ExtraInfo() const override { return m_props.extrainfo; }
   const ADDONDEPS& GetDeps() const override { return m_props.dependencies; }
 

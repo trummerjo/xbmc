@@ -38,8 +38,10 @@
 #include "cores/IPlayer.h"
 #include "FileItem.h"
 
+#include <memory>
 #include <list>
 #include <map>
+#include <vector>
 
 namespace MUSIC_INFO
 {
@@ -196,9 +198,9 @@ public:
   bool GetDisplayAfterSeek();
   void SetDisplayAfterSeek(unsigned int timeOut = 2500, int seekOffset = 0);
   void SetShowTime(bool showtime) { m_playerShowTime = showtime; };
-  void SetShowInfo(bool showinfo) { m_playerShowInfo = showinfo; };
+  void SetShowInfo(bool showinfo);
   bool GetShowInfo() const { return m_playerShowInfo; }
-  bool ToggleShowInfo() { m_playerShowInfo = !m_playerShowInfo; return m_playerShowInfo; };
+  bool ToggleShowInfo();
   bool IsPlayerChannelPreviewActive() const;
 
   std::string GetSystemHeatInfo(int info);
@@ -322,8 +324,8 @@ protected:
   //Fullscreen OSD Stuff
   unsigned int m_AfterSeekTimeout;
   int m_seekOffset;
-  bool m_playerShowTime;
-  bool m_playerShowInfo;
+  std::atomic_bool m_playerShowTime;
+  std::atomic_bool m_playerShowInfo;
 
   // FPS counters
   float m_fps;
@@ -351,8 +353,12 @@ protected:
 
   SPlayerVideoStreamInfo m_videoInfo;
   SPlayerAudioStreamInfo m_audioInfo;
+  bool m_isPvrChannelPreview;
 
   CCriticalSection m_critInfo;
+
+private:
+  static std::string FormatRatingAndVotes(float rating, int votes);
 };
 
 /*!

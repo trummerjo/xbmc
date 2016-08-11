@@ -71,12 +71,18 @@ bool CGUIWindowAddonBrowser::OnMessage(CGUIMessage& message)
   {
     case GUI_MSG_WINDOW_DEINIT:
     {
+      CRepositoryUpdater::GetInstance().Events().Unsubscribe(this);
+      CAddonMgr::GetInstance().Events().Unsubscribe(this);
+
       if (m_thumbLoader.IsLoading())
         m_thumbLoader.StopThread();
     }
     break;
   case GUI_MSG_WINDOW_INIT:
     {
+      CRepositoryUpdater::GetInstance().Events().Subscribe(this, &CGUIWindowAddonBrowser::OnEvent);
+      CAddonMgr::GetInstance().Events().Subscribe(this, &CGUIWindowAddonBrowser::OnEvent);
+
       SetProperties();
     }
     break;
@@ -163,6 +169,17 @@ class UpdateAddons : public IRunnable
   }
 };
 
+void CGUIWindowAddonBrowser::OnEvent(const ADDON::CRepositoryUpdater::RepositoryUpdated& event)
+{
+  CGUIMessage msg(GUI_MSG_NOTIFY_ALL, 0, 0, GUI_MSG_UPDATE);
+  g_windowManager.SendThreadMessage(msg);
+}
+
+void CGUIWindowAddonBrowser::OnEvent(const ADDON::AddonEvent& event)
+{
+  CGUIMessage msg(GUI_MSG_NOTIFY_ALL, 0, 0, GUI_MSG_UPDATE);
+  g_windowManager.SendThreadMessage(msg);
+}
 
 bool CGUIWindowAddonBrowser::OnClick(int iItem, const std::string &player)
 {
@@ -174,7 +191,7 @@ bool CGUIWindowAddonBrowser::OnClick(int iItem, const std::string &player)
     if (!CSettings::GetInstance().GetBool(CSettings::SETTING_ADDONS_ALLOW_UNKNOWN_SOURCES))
     {
       if (ShowYesNoDialogText(13106, 36617, 186, 10004) == DialogResponse::YES)
-        g_windowManager.ActivateWindow(WINDOW_SETTINGS_SYSTEM, "addons");
+        g_windowManager.ActivateWindow(WINDOW_SETTINGS_SYSTEM, CSettings::SETTING_ADDONS_ALLOW_UNKNOWN_SOURCES);
     }
     else
     {
@@ -184,14 +201,17 @@ bool CGUIWindowAddonBrowser::OnClick(int iItem, const std::string &player)
       g_mediaManager.GetNetworkLocations(shares);
       std::string path;
       if (CGUIDialogFileBrowser::ShowAndGetFile(shares, "*.zip", g_localizeStrings.Get(24041), path))
+      {
         CAddonInstaller::GetInstance().InstallFromZip(path);
+      }
     }
     return true;
   }
   if (item->GetPath() == "addons://update_all/")
   {
     UpdateAddons updater;
-    return CGUIDialogBusy::Wait(&updater);
+    CGUIDialogBusy::Wait(&updater);
+    return true;
   }
   if (!item->m_bIsFolder)
   {
@@ -210,7 +230,10 @@ bool CGUIWindowAddonBrowser::OnClick(int iItem, const std::string &player)
     return true;
   }
   if (item->IsPath("addons://search/"))
-    return Update(item->GetPath());
+  {
+    Update(item->GetPath());
+    return true;
+  }
 
   return CGUIMediaWindow::OnClick(iItem, player);
 }
@@ -431,6 +454,7 @@ int CGUIWindowAddonBrowser::SelectAddonID(const std::vector<ADDON::TYPE> &types,
   for (ADDON::IVECADDONS addon = addons.begin(); addon != addons.end(); ++addon)
   {
     CFileItemPtr item(CAddonsDirectory::FileItemFromAddon(*addon, (*addon)->ID()));
+    item->SetLabel2((*addon)->Summary());
     if (!items.Contains(item->GetPath()))
     {
       items.Add(item);
@@ -528,7 +552,7 @@ int CGUIWindowAddonBrowser::SelectAddonID(const std::vector<ADDON::TYPE> &types,
 
 std::string CGUIWindowAddonBrowser::GetStartFolder(const std::string &dir)
 {
-  if (URIUtils::PathStarts(dir, "addons://"))
+  if (StringUtils::StartsWith(dir, "addons://"))
     return dir;
   return CGUIMediaWindow::GetStartFolder(dir);
 }

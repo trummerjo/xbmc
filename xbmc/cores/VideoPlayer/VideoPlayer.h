@@ -22,6 +22,7 @@
 
 #include <atomic>
 #include <utility>
+#include <vector>
 #include "cores/IPlayer.h"
 #include "cores/VideoPlayer/VideoRenderers/RenderManager.h"
 #include "threads/Thread.h"
@@ -74,7 +75,6 @@ public:
 struct SOmxPlayerState
 {
   OMXClock av_clock;              // openmax clock component
-  EDEINTERLACEMODE current_deinterlace; // whether deinterlace is currently enabled
   EINTERLACEMETHOD interlace_method; // current deinterlace method
   bool bOmxWaitVideo;             // whether we need to wait for video to play out on EOS
   bool bOmxWaitAudio;             // whether we need to wait for audio to play out on EOS
@@ -82,6 +82,58 @@ struct SOmxPlayerState
   float threshold;                // current fifo threshold required to come out of buffering
   unsigned int last_check_time;   // we periodically check for gpu underrun
   double stamp;                   // last media timestamp
+};
+
+struct SPlayerState
+{
+  SPlayerState() { Clear(); }
+  void Clear()
+  {
+    timestamp = 0;
+    time = 0;
+    time_total = 0;
+    time_offset = 0;
+    dts = DVD_NOPTS_VALUE;
+    player_state  = "";
+    isInMenu = false;
+    hasMenu = false;
+    chapter = 0;
+    chapters.clear();
+    canrecord = false;
+    recording = false;
+    canpause = false;
+    canseek = false;
+    caching = false;
+    cache_bytes = 0;
+    cache_level = 0.0;
+    cache_delay = 0.0;
+    cache_offset = 0.0;
+  }
+
+  double timestamp;         // last time of update
+  double time_offset;       // difference between time and pts
+
+  double time;              // current playback time
+  double time_total;        // total playback time
+  double dts;               // last known dts
+
+  std::string player_state; // full player state
+  bool isInMenu;
+  bool hasMenu;
+
+  int chapter;              // current chapter
+  std::vector<std::pair<std::string, int64_t>> chapters; // name and position for chapters
+
+  bool canrecord;           // can input stream record
+  bool recording;           // are we currently recording
+  bool canpause;            // pvr: can pause the current playing item
+  bool canseek;             // pvr: can seek in the current playing item
+  bool caching;
+
+  int64_t cache_bytes;   // number of bytes current's cached
+  double cache_level;   // current estimated required cache level
+  double cache_delay;   // time until cache is expected to reach estimated level
+  double cache_offset;  // percentage of file ahead of current position
 };
 
 class CDVDInputStream;
@@ -241,8 +293,7 @@ public:
   virtual bool OpenFile(const CFileItem& file, const CPlayerOptions &options);
   virtual bool CloseFile(bool reopen = false);
   virtual bool IsPlaying() const;
-  virtual void Pause();
-  virtual bool IsPaused() const;
+  virtual void Pause() override;
   virtual bool HasVideo() const;
   virtual bool HasAudio() const;
   virtual bool HasRDS() const;
@@ -254,9 +305,9 @@ public:
   virtual float GetPercentage();
   virtual float GetCachePercentage();
 
-  virtual void SetVolume(float nVolume)                         { m_VideoPlayerAudio->SetVolume(nVolume); }
-  virtual void SetMute(bool bOnOff)                             { m_VideoPlayerAudio->SetMute(bOnOff); }
-  virtual void SetDynamicRangeCompression(long drc)             { m_VideoPlayerAudio->SetDynamicRangeCompression(drc); }
+  virtual void SetVolume(float nVolume) override;
+  virtual void SetMute(bool bOnOff) override;
+  virtual void SetDynamicRangeCompression(long drc) override;
   virtual bool CanRecord();
   virtual bool IsRecording();
   virtual bool CanPause();
@@ -300,7 +351,9 @@ public:
   virtual bool SeekTimeRelative(int64_t iTime);
   virtual int64_t GetTime();
   virtual int64_t GetTotalTime();
-  virtual void ToFFRW(int iSpeed);
+  virtual void SetSpeed(float speed) override;
+  virtual float GetSpeed() override;
+  virtual bool SupportsTempo() override;
   virtual bool OnAction(const CAction &action);
 
   virtual int GetSourceBitrate();
@@ -317,7 +370,6 @@ public:
   virtual void FrameMove();
   virtual bool HasFrame();
   virtual void Render(bool clear, uint32_t alpha = 255, bool gui = true);
-  virtual void AfterRender();
   virtual void FlushRenderer();
   virtual void SetRenderViewMode(int mode);
   float GetRenderAspectRatio();
@@ -325,7 +377,6 @@ public:
   virtual bool IsRenderingVideo();
   virtual bool IsRenderingGuiLayer();
   virtual bool IsRenderingVideoLayer();
-  virtual bool Supports(EDEINTERLACEMODE mode);
   virtual bool Supports(EINTERLACEMETHOD method);
   virtual bool Supports(ESCALINGMETHOD method);
   virtual bool Supports(ERENDERFEATURE feature);
@@ -339,20 +390,11 @@ public:
   virtual void OnLostDisplay();
   virtual void OnResetDisplay();
 
-  enum ECacheState
-  { CACHESTATE_DONE = 0
-  , CACHESTATE_FULL     // player is filling up the demux queue
-  , CACHESTATE_INIT     // player is waiting for first packet of each stream
-  , CACHESTATE_PLAY     // player is waiting for players to not be stalled
-  , CACHESTATE_FLUSH    // temporary state player will choose startup between init or full
-  };
+  virtual bool IsCaching() const override;
+  virtual int GetCacheLevel() const override;
 
-  virtual bool IsCaching() const { return m_caching > CACHESTATE_DONE && m_caching < CACHESTATE_PLAY; }
-  virtual int GetCacheLevel() const ;
-
-  virtual int OnDVDNavResult(void* pData, int iMessage);
-
-  virtual bool ControlsVolume() {return m_omxplayer_mode;}
+  virtual int OnDVDNavResult(void* pData, int iMessage) override;
+  void GetVideoResolution(unsigned int &width, unsigned int &height) override;
 
 protected:
   friend class CSelectionStreams;
@@ -362,6 +404,7 @@ protected:
   virtual void Process();
   virtual void VideoParamsChange() override;
   virtual void GetDebugInfo(std::string &audio, std::string &video, std::string &general) override;
+  virtual void UpdateClockSync(bool enabled) override;
 
   void CreatePlayers();
   void DestroyPlayers();
@@ -397,7 +440,17 @@ protected:
    * one of the DVD_PLAYSPEED defines
    */
   void SetPlaySpeed(int iSpeed);
-  int GetPlaySpeed()                                                { return m_playSpeed; }
+  int GetPlaySpeed() { return m_playSpeed; }
+
+  enum ECacheState
+  {
+    CACHESTATE_DONE = 0,
+    CACHESTATE_FULL,     // player is filling up the demux queue
+    CACHESTATE_INIT,     // player is waiting for first packet of each stream
+    CACHESTATE_PLAY,     // player is waiting for players to not be stalled
+    CACHESTATE_FLUSH,    // temporary state player will choose startup between init or full
+  };
+
   void SetCaching(ECacheState state);
 
   int64_t GetTotalTimeInMsec();
@@ -432,6 +485,7 @@ protected:
 
   bool OpenInputStream();
   bool OpenDemuxStream();
+  void CloseDemuxer();
   void OpenDefaultStreams(bool reset = true);
 
   void UpdateApplication(double timeout);
@@ -458,7 +512,8 @@ protected:
 
   CSelectionStreams m_SelectionStreams;
 
-  int m_playSpeed;
+  std::atomic_int m_playSpeed;
+  std::atomic_int m_newPlaySpeed;
   int m_streamPlayerSpeed;
   struct SSpeedState
   {
@@ -467,6 +522,7 @@ protected:
     int lastseekpts;
     double  lastabstime;
   } m_SpeedState;
+  std::atomic_bool m_canTempo;
 
   int m_errorCount;
   double m_offset_pts;

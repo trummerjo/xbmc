@@ -14,7 +14,7 @@
 #   TagLib::TagLib   - The TagLib library
 
 if(PKG_CONFIG_FOUND)
-  pkg_check_modules(PC_TAGLIB taglib>=1.8.0 QUIET)
+  pkg_check_modules(PC_TAGLIB taglib>=1.9.0 QUIET)
 endif()
 
 find_path(TAGLIB_INCLUDE_DIR taglib/tag.h
@@ -29,7 +29,7 @@ include(SelectLibraryConfigurations)
 select_library_configurations(TAGLIB)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(TAGLIB
+find_package_handle_standard_args(TagLib
                                   REQUIRED_VARS TAGLIB_LIBRARY TAGLIB_INCLUDE_DIR
                                   VERSION_VAR TAGLIB_VERSION)
 

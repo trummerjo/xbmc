@@ -257,14 +257,6 @@ bool CDVDAudio::IsValidFormat(const DVDAudioFrame &audioframe)
   return true;
 }
 
-void CDVDAudio::SetResampleRatio(double ratio)
-{
-  CSingleLock lock (m_critSection);
-
-  if(m_pAudioStream)
-    m_pAudioStream->SetResampleRatio(ratio);
-}
-
 double CDVDAudio::GetCacheTime()
 {
   CSingleLock lock (m_critSection);
@@ -332,9 +324,8 @@ void CDVDAudio::SetResampleMode(int mode)
 
 double CDVDAudio::GetClock()
 {
-  double absolute;
   if (m_pClock)
-    return m_pClock->GetClock(absolute) / DVD_TIME_BASE * 1000;
+    return (m_pClock->GetClock() + m_pClock->GetVsyncAdjust()) / DVD_TIME_BASE * 1000;
   else
     return 0.0;
 }

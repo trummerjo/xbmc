@@ -74,8 +74,6 @@
 					<control type="image">
 						<width>130</width>
 						<height>110</height>
-						<align>center</align>
-						<aligny>center</aligny>
 						<texture border="40">buttons/button-nofo.png</texture>
 					</control>
 					<control type="image">
@@ -83,8 +81,6 @@
 						<top>35</top>
 						<width>40</width>
 						<height>40</height>
-						<align>center</align>
-						<aligny>center</aligny>
 						<texture>icons/submenu/$INFO[ListItem.Art(thumb)]</texture>
 					</control>
 				</itemlayout>
@@ -92,17 +88,13 @@
 					<control type="image">
 						<width>130</width>
 						<height>110</height>
-						<align>center</align>
-						<aligny>center</aligny>
-						<texture border="40" colordiffuse="button_focus">buttons/button-theme-fo.png</texture>
+						<texture border="40" colordiffuse="button_focus">buttons/button-fo.png</texture>
 					</control>
 					<control type="image">
 						<left>45</left>
 						<top>35</top>
 						<width>40</width>
 						<height>40</height>
-						<align>center</align>
-						<aligny>center</aligny>
 						<texture>icons/submenu/$INFO[ListItem.Art(thumb)]</texture>
 					</control>
 				</focusedlayout>
@@ -173,7 +165,7 @@
 			<control type="label">
 				<left>500</left>
 				<top>20</top>
-				<width>600</width>
+				<width>900</width>
 				<height>40</height>
 				<label>$PARAM[widget_header]</label>
 				<shadowcolor>text_shadow</shadowcolor>
@@ -285,7 +277,7 @@
 						</control>
 					</control>
 				</focusedlayout>
-				<content target="$PARAM[widget_target]" limit="10">$PARAM[content_path]</content>
+				<content sortby="$PARAM[sortby]" sortorder="$PARAM[sortorder]" target="$PARAM[widget_target]" limit="10">$PARAM[content_path]</content>
 			</control>
 		</control>
 	</include>
@@ -405,7 +397,7 @@
 				<control type="label">
 					<left>500</left>
 					<top>15</top>
-					<width>600</width>
+					<width>900</width>
 					<height>40</height>
 					<label>$PARAM[widget_header]</label>
 					<shadowcolor>text_shadow</shadowcolor>
@@ -564,7 +556,7 @@
 				<control type="label">
 					<left>500</left>
 					<top>15</top>
-					<width>600</width>
+					<width>900</width>
 					<height>40</height>
 					<label>$PARAM[widget_header]</label>
 					<shadowcolor>text_shadow</shadowcolor>
@@ -718,7 +710,7 @@
 		<param name="height">405</param>
 		<param name="arrow_posy">200</param>
 		<param name="item_limit">12</param>
-		<param name="icon">icons/defaulticons/$INFO[ListItem.Icon]</param>
+		<param name="icon">$INFO[ListItem.Icon]</param>
 		<param name="sortby">label</param>
 		<param name="sortorder">ascending</param>
 		<definition>
@@ -731,7 +723,7 @@
 				<control type="label">
 					<left>500</left>
 					<top>15</top>
-					<width>600</width>
+					<width>900</width>
 					<height>40</height>
 					<label>$PARAM[widget_header]</label>
 					<shadowcolor>text_shadow</shadowcolor>
@@ -767,7 +759,7 @@
 							<left>62</left>
 							<width>220</width>
 							<height>180</height>
-							<texture fallback="icons/defaulticons/DefaultFolder.png">$PARAM[icon]</texture>
+							<texture fallback="DefaultFolder.png">$PARAM[icon]</texture>
 							<aspectratio>keep</aspectratio>
 						</control>
 						<control type="image">
@@ -806,7 +798,7 @@
 							<control type="image">
 								<width>340</width>
 								<height>340</height>
-								<texture border="40" colordiffuse="button_focus">buttons/button-theme-fo.png</texture>
+								<texture border="40" colordiffuse="button_focus">buttons/button-fo.png</texture>
 								<animation effect="fade" start="0" end="100" time="200">Focus</animation>
 								<animation effect="fade" start="100" end="0" time="0">Unfocus</animation>
 							</control>
@@ -815,7 +807,7 @@
 								<left>62</left>
 								<width>220</width>
 								<height>180</height>
-								<texture fallback="icons/defaulticons/DefaultFolder.png">$PARAM[icon]</texture>
+								<texture fallback="DefaultFolder.png">$PARAM[icon]</texture>
 								<aspectratio>keep</aspectratio>
 							</control>
 							<control type="image">
@@ -847,7 +839,7 @@
 		<param name="height">600</param>
 		<param name="arrow_posy">200</param>
 		<param name="item_limit">10</param>
-		<param name="icon">icons/defaulticons/$INFO[ListItem.Icon]</param>
+		<param name="icon">$INFO[ListItem.Icon]</param>
 		<definition>
 			<control type="group">
 				<description>Square Widget including header and arrows</description>
@@ -858,7 +850,7 @@
 				<control type="label">
 					<left>500</left>
 					<top>15</top>
-					<width>600</width>
+					<width>900</width>
 					<height>40</height>
 					<label>$PARAM[widget_header]</label>
 					<shadowcolor>text_shadow</shadowcolor>
@@ -913,7 +905,7 @@
 							<top>350</top>
 							<width>260</width>
 							<height>100</height>
-							<label>[COLOR button_focus]$INFO[ListItem.StartTime] - $INFO[ListItem.EndTime][/COLOR][CR]$INFO[ListItem.Title]</label>
+							<label>[COLOR button_focus]$INFO[ListItem.StartTime,, - ]$INFO[ListItem.EndTime][/COLOR][CR]$INFO[ListItem.Title]</label>
 							<font>font12</font>
 							<shadowcolor>text_shadow</shadowcolor>
 							<align>center</align>
@@ -937,7 +929,7 @@
 							<control type="image">
 								<width>340</width>
 								<height>500</height>
-								<texture border="40" colordiffuse="button_focus">buttons/button-theme-fo.png</texture>
+								<texture border="40" colordiffuse="button_focus">buttons/button-fo.png</texture>
 								<animation effect="fade" start="0" end="100" time="200">Focus</animation>
 								<animation effect="fade" start="100" end="0" time="0">Unfocus</animation>
 							</control>
@@ -965,7 +957,7 @@
 								<top>350</top>
 								<width>260</width>
 								<height>100</height>
-								<label>[COLOR button_focus]$INFO[ListItem.StartTime] - $INFO[ListItem.EndTime][/COLOR][CR]$INFO[ListItem.Title]</label>
+								<label>[COLOR button_focus]$INFO[ListItem.StartTime,, - ]$INFO[ListItem.EndTime][/COLOR][CR]$INFO[ListItem.Title]</label>
 								<font>font12</font>
 								<shadowcolor>text_shadow</shadowcolor>
 								<align>center</align>
@@ -973,7 +965,7 @@
 							</control>
 						</control>
 					</focusedlayout>
-					<content target="$PARAM[widget_target]" limit="$PARAM[item_limit]">$PARAM[content_path]</content>
+					<content sortby="$PARAM[sortby]" sortorder="$PARAM[sortorder]" target="$PARAM[widget_target]" limit="$PARAM[item_limit]">$PARAM[content_path]</content>
 				</control>
 			</control>
 		</definition>
@@ -1009,7 +1001,7 @@
 			<control type="label">
 				<left>500</left>
 				<top>30</top>
-				<width>600</width>
+				<width>900</width>
 				<height>40</height>
 				<label>$PARAM[widget_header]</label>
 				<font>font14</font>
@@ -1091,7 +1083,7 @@
 							<top>20</top>
 							<width>260</width>
 							<height>350</height>
-							<texture border="40" colordiffuse="button_focus">buttons/button-theme-fo.png</texture>
+							<texture border="40" colordiffuse="button_focus">buttons/button-fo.png</texture>
 							<animation effect="fade" start="100" end="0" time="0">Unfocus</animation>
 							<visible>Control.HasFocus($PARAM[list_id])</visible>
 						</control>

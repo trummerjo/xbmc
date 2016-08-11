@@ -6,9 +6,9 @@
 	<menucontrol>9000</menucontrol>
 	<controls>
 		<include>DefaultBackground</include>
-		<include>CommonScrollbars</include>
 		<control type="group">
 			<animation effect="fade" start="100" end="0" time="200" tween="sine" condition="$EXP[infodialog_active]">Conditional</animation>
+			<include>CommonScrollbars</include>
 			<include>View_50_List</include>
 			<include>View_52_IconWall</include>
 			<include>View_53_Shift</include>
@@ -181,11 +181,11 @@
 					</include>
 					<include content="PicsInfoLine">
 						<param name="label" value="$LOCALIZE[21843]"/>
-						<param name="value" value="$INFO[ListItem.PictureOrientation]" />
+						<param name="value" value="ListItem.PictureOrientation" />
 					</include>
 					<include content="PicsInfoLine">
 						<param name="label" value="$LOCALIZE[21808]"/>
-						<param name="value" value="$INFO[ListItem.PictureProcess]" />
+						<param name="value" value="ListItem.PictureProcess" />
 					</include>
 				</control>
 			</control>
@@ -193,7 +193,6 @@
 				<include>OpenClose_Left</include>
 				<visible>Control.IsVisible(50) | Control.IsVisible(55)</visible>
 				<include>Visible_Left</include>
-				<visible>!Container.Content()</visible>
 				<include>ListThumbInfoPanel</include>
 			</control>
 			<include>MediaMenuMouseOverlay</include>

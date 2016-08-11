@@ -65,8 +65,10 @@ void CGUIWindowPVRSearch::GetContextButtons(int itemNumber, CContextButtons &but
       }
 
       const CPVRTimerTypePtr timerType(timer->GetTimerType());
-      if (timerType && !timerType->IsReadOnly())
+      if (timerType && !timerType->IsReadOnly() && timer->GetTimerRuleId() == PVR_TIMER_NO_PARENT)
         buttons.Add(CONTEXT_BUTTON_EDIT_TIMER, 19242);    /* Edit timer */
+      else
+        buttons.Add(CONTEXT_BUTTON_EDIT_TIMER, 19241);    /* View timer information */
 
       if (timer->IsRecording())
         buttons.Add(CONTEXT_BUTTON_STOP_RECORD, 19059);   /* Stop recording */
@@ -181,7 +183,7 @@ void CGUIWindowPVRSearch::OnPrepareFileItems(CFileItemList &items)
       dlgProgress->Progress();
     }
 
-    // TODO should we limit the find similar search to the selected group?
+    //! @todo should we limit the find similar search to the selected group?
     g_EpgContainer.GetEPGSearch(items, m_searchfilter);
 
     if (dlgProgress)

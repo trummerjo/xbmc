@@ -48,7 +48,6 @@ public:
   void Flush(bool sync);
 
   // waits until all available data has been rendered
-  void WaitForBuffers();
   bool AcceptsData() const;
   bool HasData() const                                  { return m_messageQueue.GetDataSize() > 0; }
   int  GetLevel() const                                 { return m_messageQueue.GetLevel(); }
@@ -56,8 +55,6 @@ public:
   void SendMessage(CDVDMsg* pMsg, int priority = 0)     { m_messageQueue.Put(pMsg, priority); }
   void FlushMessages()                                  { m_messageQueue.Flush(); }
 
-  void SetVolume(float fVolume)                         { m_dvdAudio.SetVolume(fVolume); }
-  void SetMute(bool bOnOff)                             { }
   void SetDynamicRangeCompression(long drc)             { m_dvdAudio.SetDynamicRangeCompression(drc); }
   float GetDynamicRangeAmplification() const            { return 0.0f; }
 
@@ -72,7 +69,6 @@ public:
   double GetCurrentPts()                            { CSingleLock lock(m_info_section); return m_info.pts; }
 
   bool IsStalled() const                            { return m_stalled;  }
-  bool IsEOS()                                      { return false; }
   bool IsPassthrough() const;
 
 protected:
@@ -101,6 +97,7 @@ protected:
   int m_speed;
   bool m_stalled;
   bool m_silence;
+  bool m_paused;
   IDVDStreamPlayer::ESyncState m_syncState;
   XbmcThreads::EndTime m_syncTimer;
 

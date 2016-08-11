@@ -19,6 +19,8 @@
  *
  */
 
+#include <vector>
+
 #include "EventScanner.h"
 #include "bus/PeripheralBus.h"
 #include "devices/Peripheral.h"
@@ -191,13 +193,13 @@ namespace PERIPHERALS
      * @brief Try to mute the audio via a peripheral.
      * @return True when this change was handled by a peripheral (and should not be handled by anything else), false otherwise.
      */
-    virtual bool Mute() { return ToggleMute(); } // TODO CEC only supports toggling the mute status at this time
+    virtual bool Mute() { return ToggleMute(); } //! @todo CEC only supports toggling the mute status at this time
 
     /*!
      * @brief Try to unmute the audio via a peripheral.
      * @return True when this change was handled by a peripheral (and should not be handled by anything else), false otherwise.
      */
-    virtual bool UnMute() { return ToggleMute(); } // TODO CEC only supports toggling the mute status at this time
+    virtual bool UnMute() { return ToggleMute(); } //! @todo CEC only supports toggling the mute status at this time
 
     /*!
      * @brief Try to get a keypress from a peripheral.
@@ -213,6 +215,17 @@ namespace PERIPHERALS
      * @return A handle that unsets its rate when expired
      */
     EventRateHandle SetEventScanRate(float rateHz) { return m_eventScanner.SetRate(rateHz); }
+
+    /*!
+     * 
+     */
+    void OnUserNotification();
+
+    /*!
+     * @brief Request peripherals with the specified feature to perform a quick test
+     * @return true if any peripherals support the feature, false otherwise
+     */
+    bool TestFeature(PeripheralFeature feature);
 
     bool SupportsCEC() const
     {

@@ -147,6 +147,24 @@ namespace XBMCAddon
       }
     }
 
+    void ListItem::setUniqueIDs(const Properties& dictionary)
+    {
+      if (!item) return;
+
+      LOCKGUI;
+      CVideoInfoTag& vtag = *item->GetVideoInfoTag();
+      for (Properties::const_iterator it = dictionary.begin(); it != dictionary.end(); ++it)
+        vtag.SetUniqueID(it->second, it->first);
+    }
+
+    void ListItem::setRating(std::string type, float rating, int votes /* = 0 */, bool def /* = false */)
+    {
+      if (!item) return;
+
+      LOCKGUI;
+      item->GetVideoInfoTag()->SetRating(rating, votes, type, def);
+    }
+
     void ListItem::select(bool selected)
     {
       if (!item) return;
@@ -224,6 +242,30 @@ namespace XBMCAddon
       return value;
     }
 
+    String ListItem::getArt(const char* key)
+    {
+      LOCKGUI;
+      return item->GetArt(key);
+    }
+
+    String ListItem::getUniqueID(const char* key)
+    {
+      LOCKGUI;
+      return item->GetVideoInfoTag()->GetUniqueID(key);
+    }
+
+    float ListItem::getRating(const char* key)
+    {
+      LOCKGUI;
+      return item->GetVideoInfoTag()->GetRating(key).rating;
+    }
+
+    int ListItem::getVotes(const char* key)
+    {
+      LOCKGUI;
+      return item->GetVideoInfoTag()->GetRating(key).votes;
+    }
+
     void ListItem::setPath(const String& path)
     {
       LOCKGUI;
@@ -284,8 +326,10 @@ namespace XBMCAddon
           const InfoLabelValue& alt = it->second;
           const String value(alt.which() == first ? alt.former() : emptyString);
 
-          if (key == "year")
-            item->GetVideoInfoTag()->m_iYear = strtol(value.c_str(), NULL, 10);
+          if (key == "dbid")
+            item->GetVideoInfoTag()->m_iDbId = strtol(value.c_str(), NULL, 10);
+          else if (key == "year")
+            item->GetVideoInfoTag()->SetYear(strtol(value.c_str(), NULL, 10));
           else if (key == "episode")
             item->GetVideoInfoTag()->m_iEpisode = strtol(value.c_str(), NULL, 10);
           else if (key == "season")
@@ -379,13 +423,17 @@ namespace XBMCAddon
           else if (key == "tvshowtitle")
             item->GetVideoInfoTag()->m_strShowTitle = value;
           else if (key == "premiered")
-            item->GetVideoInfoTag()->m_premiered.SetFromDateString(value);
+          {
+            CDateTime premiered;
+            premiered.SetFromDateString(value);
+            item->GetVideoInfoTag()->SetPremiered(premiered);
+          }
           else if (key == "status")
             item->GetVideoInfoTag()->m_strStatus = value;
           else if (key == "set")
             item->GetVideoInfoTag()->m_strSet = value;
           else if (key == "imdbnumber")
-            item->GetVideoInfoTag()->m_strIMDBNumber = value;
+            item->GetVideoInfoTag()->SetUniqueID(value);
           else if (key == "code")
             item->GetVideoInfoTag()->m_strProductionCode = value;
           else if (key == "aired")
@@ -433,7 +481,7 @@ namespace XBMCAddon
           const InfoLabelValue& alt = it->second;
           const String value(alt.which() == first ? alt.former() : emptyString);
 
-          // TODO: add the rest of the infolabels
+          //! @todo add the rest of the infolabels
           if (key == "tracknumber")
             item->GetMusicInfoTag()->SetTrackNumber(strtol(value.c_str(), NULL, 10));
           else if (key == "discnumber")
@@ -603,28 +651,17 @@ namespace XBMCAddon
 
     void ListItem::addContextMenuItems(const std::vector<Tuple<String,String> >& items, bool replaceItems /* = false */)
     {
-      int itemCount = 0;
-      for (std::vector<Tuple<String,String> >::const_iterator iter = items.begin(); iter < items.end(); ++iter, ++itemCount)
+      for (size_t i = 0; i < items.size(); ++i)
       {
-        Tuple<String,String> tuple = *iter;
+        auto& tuple = items[i];
         if (tuple.GetNumValuesSet() != 2)
           throw ListItemException("Must pass in a list of tuples of pairs of strings. One entry in the list only has %d elements.",tuple.GetNumValuesSet());
-        std::string uText = tuple.first();
-        std::string uAction = tuple.second();
 
         LOCKGUI;
-        String property;
-        property = StringUtils::Format("contextmenulabel(%i)", itemCount);
-        item->SetProperty(property, uText);
-
-        property = StringUtils::Format("contextmenuaction(%i)", itemCount);
-        item->SetProperty(property, uAction);
+        item->SetProperty(StringUtils::Format("contextmenulabel(%zu)", i), tuple.first());
+        item->SetProperty(StringUtils::Format("contextmenuaction(%zu)", i), tuple.second());
       }
-
-      // set our replaceItems status
-      if (replaceItems)
-        item->SetProperty("pluginreplacecontextitems", replaceItems);
-    } // end addContextMenuItems
+    }
 
     void ListItem::setSubtitles(const std::vector<String>& paths)
     {

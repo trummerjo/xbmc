@@ -40,6 +40,7 @@ public:
   void SetSource(std::string source) { m_props.source = std::move(source); }
   void SetIcon(std::string icon) { m_props.icon = std::move(icon); }
   void SetFanart(std::string fanart) { m_props.fanart = std::move(fanart); }
+  void SetScreenshots(std::vector<std::string> screenshots) { m_props.screenshots = std::move(screenshots); }
   void SetChangelog(std::string changelog) { m_props.changelog = std::move(changelog); }
   void SetBroken(std::string broken) { m_props.broken = std::move(broken); }
   void SetPath(std::string path) { m_props.path = std::move(path); }
@@ -53,6 +54,8 @@ public:
   void SetInstallDate(CDateTime installDate) { m_props.installDate = installDate; }
   void SetLastUpdated(CDateTime lastUpdated) { m_props.lastUpdated = lastUpdated; }
   void SetLastUsed(CDateTime lastUsed) { m_props.lastUsed = lastUsed; }
+  void SetOrigin(std::string origin) { m_props.origin = std::move(origin); }
+  void SetPackageSize(uint64_t size) { m_props.packageSize = size; }
 
   const std::string& GetId() const { return m_props.id; }
   const AddonVersion& GetVersion() const { return m_props.version; }

@@ -100,25 +100,26 @@ void CPeripherals::Initialise()
   /* load mappings from peripherals.xml */
   LoadMappings();
 
-  {
-    CSingleLock bussesLock(m_critSectionBusses);
+  std::vector<PeripheralBusPtr> busses;
+
 #if defined(HAVE_PERIPHERAL_BUS_USB)
-    m_busses.push_back(std::make_shared<CPeripheralBusUSB>(this));
+  busses.push_back(std::make_shared<CPeripheralBusUSB>(this));
 #endif
 #if defined(HAVE_LIBCEC)
-    m_busses.push_back(std::make_shared<CPeripheralBusCEC>(this));
+  busses.push_back(std::make_shared<CPeripheralBusCEC>(this));
 #endif
-    m_busses.push_back(std::make_shared<CPeripheralBusAddon>(this));
+  busses.push_back(std::make_shared<CPeripheralBusAddon>(this));
 #if defined(TARGET_ANDROID)
-    m_busses.push_back(std::make_shared<CPeripheralBusAndroid>(this));
+  busses.push_back(std::make_shared<CPeripheralBusAndroid>(this));
 #endif
 
-    /* initialise all known busses and run an initial scan for devices */
-    for (auto& bus : m_busses)
-    {
-      bus->Initialise();
-      bus->TriggerDeviceScan();
-    }
+  /* initialise all known busses and run an initial scan for devices */
+  for (auto& bus : busses)
+    bus->Initialise();
+
+  {
+    CSingleLock bussesLock(m_critSectionBusses);
+    m_busses = std::move(busses);
   }
 
   m_eventScanner.Start();
@@ -165,8 +166,13 @@ void CPeripherals::Clear()
 
 void CPeripherals::TriggerDeviceScan(const PeripheralBusType type /* = PERIPHERAL_BUS_UNKNOWN */)
 {
-  CSingleLock lock(m_critSectionBusses);
-  for (auto& bus : m_busses)
+  std::vector<PeripheralBusPtr> busses;
+  {
+    CSingleLock lock(m_critSectionBusses);
+    busses = m_busses;
+  }
+
+  for (auto& bus : busses)
   {
     bool bScan = false;
 
@@ -252,7 +258,7 @@ int CPeripherals::GetPeripheralsWithFeature(std::vector<CPeripheral *> &results,
 size_t CPeripherals::GetNumberOfPeripherals() const
 {
   size_t iReturn(0);
-  CSingleLock lock(m_critSection);
+  CSingleLock lock(m_critSectionBusses);
   for (const auto& bus : m_busses)
     iReturn += bus->GetNumberOfPeripherals();
 
@@ -550,7 +556,7 @@ void CPeripherals::GetSettingsFromMappingsFile(TiXmlElement *xmlNode, std::map<s
 
     if (setting)
     {
-      //TODO add more types if needed
+      //! @todo add more types if needed
 
       /* set the visibility */
       setting->SetVisible(bConfigurable);
@@ -721,11 +727,34 @@ bool CPeripherals::GetNextKeypress(float frameTime, CKey &key)
   return false;
 }
 
+void CPeripherals::OnUserNotification()
+{
+  std::vector<CPeripheral*> peripherals;
+  GetPeripheralsWithFeature(peripherals, FEATURE_RUMBLE);
+
+  for (CPeripheral* peripheral : peripherals)
+    peripheral->OnUserNotification();
+}
+
+bool CPeripherals::TestFeature(PeripheralFeature feature)
+{
+  std::vector<CPeripheral*> peripherals;
+  GetPeripheralsWithFeature(peripherals, feature);
+
+  if (!peripherals.empty())
+  {
+    for (CPeripheral* peripheral : peripherals)
+      peripheral->TestFeature(feature);
+    return true;
+  }
+  return false;
+}
+
 void CPeripherals::ProcessEvents(void)
 {
   std::vector<PeripheralBusPtr> busses;
   {
-    CSingleLock lock(m_critSection);
+    CSingleLock lock(m_critSectionBusses);
     busses = m_busses;
   }
 
@@ -870,6 +899,8 @@ void CPeripherals::OnSettingAction(const CSetting *setting)
   }
   else if (settingId == CSettings::SETTING_INPUT_CONTROLLERCONFIG)
     g_windowManager.ActivateWindow(WINDOW_DIALOG_GAME_CONTROLLERS);
+  else if (settingId == CSettings::SETTING_INPUT_TESTRUMBLE)
+    TestFeature(FEATURE_RUMBLE);
 }
 
 void CPeripherals::OnApplicationMessage(KODI::MESSAGING::ThreadMessage* pMsg)

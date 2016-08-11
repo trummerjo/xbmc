@@ -47,7 +47,7 @@ public:
   double GetClock(bool interpolated = true);
   double GetClock(double& absolute, bool interpolated = true);
 
-  bool Update(double clock, double absolute, double limit, const char* log);
+  double ErrorAdjust(double error, const char* log);
   void Discontinuity(double clock, double absolute);
   void Discontinuity(double clock = 0LL)
   {
@@ -70,8 +70,11 @@ public:
   double GetAbsoluteClock(bool interpolated = true);
   double GetFrequency() { return (double)m_systemFrequency ; }
 
-  double GetRefreshRate();
   bool GetClockInfo(int& MissedVblanks, double& ClockSpeed, double& RefreshRate) const;
+  void SetVsyncAdjust(double adjustment);
+  double GetVsyncAdjust();
+
+  void Pause(bool pause);
 
 protected:
   double SystemToAbsolute(int64_t system);
@@ -84,6 +87,8 @@ protected:
   int64_t m_pauseClock;
   double m_iDisc;
   bool m_bReset;
+  bool m_paused;
+  int m_speedAfterPause;
   std::unique_ptr<CVideoReferenceClock> m_videoRefClock;
 
   int64_t m_systemFrequency;
@@ -93,6 +98,8 @@ protected:
   int64_t m_systemAdjust;
   int64_t m_lastSystemTime;
   double m_speedAdjust;
+  double m_vSyncAdjust;
+  double m_frameTime;
 
   double m_maxspeedadjust;
   CCriticalSection m_speedsection;

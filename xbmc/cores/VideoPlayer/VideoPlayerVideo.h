@@ -45,17 +45,15 @@ class CDroppingStats
 {
 public:
   void Reset();
-  void AddOutputDropGain(double pts, double frametime);
+  void AddOutputDropGain(double pts, int frames);
   struct CGain
   {
-    double gain;
+    int frames;
     double pts;
   };
   std::deque<CGain> m_gain;
   double m_totalGain;
   double m_lastPts;
-  unsigned int m_lateFrames;
-  unsigned int m_dropRequests;
 };
 
 class CVideoPlayerVideo : public CThread, public IDVDStreamPlayerVideo
@@ -85,8 +83,6 @@ public:
   double GetSubtitleDelay() { return m_iSubtitleDelay; }
   void SetSubtitleDelay(double delay) { m_iSubtitleDelay = delay; }
   bool IsStalled() const { return m_stalled; }
-  bool IsEOS() { return false; }
-  bool SubmittedEOS() const { return false; }
   double GetCurrentPts();
   double GetOutputDelay(); /* returns the expected delay, from that a packet is put in queue */
   int GetDecoderFreeSpace() { return 0; }
@@ -108,10 +104,6 @@ protected:
   int OutputPicture(const DVDVideoPicture* src, double pts);
   void ProcessOverlays(DVDVideoPicture* pSource, double pts);
   void OpenStream(CDVDStreamInfo &hint, CDVDVideoCodec* codec);
-
-  // waits until all available data has been rendered
-  // just waiting for packetqueue should be enough for video
-  void WaitForBuffers()  { m_messageQueue.WaitUntilEmpty(); }
 
   void ResetFrameRateCalc();
   void CalcFrameRate();
@@ -138,6 +130,7 @@ protected:
   float m_fForcedAspectRatio;
   int m_speed;
   bool m_stalled;
+  bool m_paused;
   IDVDStreamPlayer::ESyncState m_syncState;
   std::atomic_bool m_bAbortOutput;
 

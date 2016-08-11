@@ -29,10 +29,12 @@
 #include "dialogs/GUIDialogSmartPlaylistEditor.h"
 #include "dialogs/GUIDialogProgress.h"
 #include "dialogs/GUIDialogYesNo.h"
+#include "view/GUIViewState.h"
 #include "playlists/PlayListFactory.h"
 #include "Application.h"
 #include "NfoFile.h"
 #include "PlayListPlayer.h"
+#include "cores/playercorefactory/PlayerCoreFactory.h"
 #include "GUIPassword.h"
 #include "filesystem/StackDirectory.h"
 #include "filesystem/VideoDatabaseDirectory.h"
@@ -179,10 +181,6 @@ bool CGUIWindowVideoBase::OnMessage(CGUIMessage& message)
             if (GetID() == WINDOW_VIDEO_NAV)
               OnDeleteItem(iItem);
 
-            // or be at the files window and have file deletion enabled
-            else if (GetID() == WINDOW_VIDEO_FILES && CSettings::GetInstance().GetBool(CSettings::SETTING_FILELISTS_ALLOWFILEDELETION))
-              OnDeleteItem(iItem);
-
             // or be at the video playlists location
             else if (m_vecItems->IsPath("special://videoplaylists/"))
               OnDeleteItem(iItem);
@@ -260,8 +258,7 @@ void CGUIWindowVideoBase::OnItemInfo(const CFileItem& fileItem, ADDON::ScraperPt
 
   bool modified = ShowIMDB(CFileItemPtr(new CFileItem(item)), scraper, fromDB);
   if (modified &&
-     (g_windowManager.GetActiveWindow() == WINDOW_VIDEO_FILES ||
-      g_windowManager.GetActiveWindow() == WINDOW_VIDEO_NAV)) // since we can be called from the music library we need this check
+     (g_windowManager.GetActiveWindow() == WINDOW_VIDEO_NAV)) // since we can be called from the music library we need this check
   {
     int itemNumber = m_viewControl.GetSelectedItem();
     Refresh();
@@ -369,7 +366,7 @@ bool CGUIWindowVideoBase::ShowIMDB(CFileItemPtr item, const ScraperPtr &info2, b
   if (bHasInfo)
   {
     if (!info || info->Content() == CONTENT_NONE) // disable refresh button
-      movieDetails.m_strIMDBNumber = "xx"+movieDetails.m_strIMDBNumber;
+      movieDetails.SetUniqueID("xx"+movieDetails.GetUniqueID());
     *item->GetVideoInfoTag() = movieDetails;
     pDlgInfo->SetMovie(item.get());
     pDlgInfo->Open();
@@ -819,7 +816,7 @@ void CGUIWindowVideoBase::GetContextButtons(int itemNumber, CContextButtons &but
     item = m_vecItems->Get(itemNumber);
 
   // contextual buttons
-  if (item && !item->GetProperty("pluginreplacecontextitems").asBoolean())
+  if (item)
   {
     if (!item->IsParentFolder())
     {
@@ -1096,8 +1093,8 @@ bool CGUIWindowVideoBase::OnPlayMedia(int iItem, const std::string &player)
   CLog::Log(LOGDEBUG, "%s %s", __FUNCTION__, CURL::GetRedacted(item.GetPath()).c_str());
 
 
-  // TODO: delete entire block in v18
-  // m_strStreamURL is deprecated
+  //! @todo delete entire block in v18
+  //! @deprecated m_strStreamURL is deprecated in v17
   if (item.IsPVR())
   {
     CPVRRecordingsPath path(item.GetPath());
@@ -1472,14 +1469,14 @@ void CGUIWindowVideoBase::AddToDatabase(int iItem)
   // everything is ok, so add to database
   m_database.Open();
   int idMovie = m_database.AddMovie(pItem->GetPath());
-  movie.m_strIMDBNumber = StringUtils::Format("xx%08i", idMovie);
+  movie.SetUniqueID(StringUtils::Format("xx%08i", idMovie));
   m_database.SetDetailsForMovie(pItem->GetPath(), movie, pItem->GetArt());
   m_database.Close();
 
   // done...
   CGUIDialogOK::ShowAndGetInput(CVariant{20177}, CVariant{movie.m_strTitle},
                                 CVariant{StringUtils::Join(movie.m_genre, g_advancedSettings.m_videoItemSeparator)},
-                                CVariant{movie.m_strIMDBNumber});
+                                CVariant{movie.GetUniqueID()});
 
   // library view cache needs to be cleared
   CUtil::DeleteVideoDatabaseDirectoryCache();

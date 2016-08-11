@@ -32,6 +32,14 @@ msgctxt "#31005"
 msgid "Watch as 2D"
 msgstr "Смотреть в 2D"
 
+msgctxt "#31007"
+msgid "Unwatched movies"
+msgstr "Не просмотреные фильмы"
+
+msgctxt "#31009"
+msgid "Download icons"
+msgstr "Загрузить иконки"
+
 msgctxt "#31012"
 msgid "Random albums"
 msgstr "Случайные альбомы"
@@ -80,13 +88,33 @@ msgctxt "#31027"
 msgid "Go to songs"
 msgstr "Перейти к композициям"
 
+msgctxt "#31028"
+msgid "Show fanart"
+msgstr "Показать фанарт"
+
 msgctxt "#31029"
 msgid "Last logged in"
 msgstr "Последний вход"
 
+msgctxt "#31030"
+msgid "Memory used"
+msgstr "Использовано памяти"
+
+msgctxt "#31031"
+msgid "Version info"
+msgstr "Информация о версии"
+
 msgctxt "#31032"
 msgid "Order"
 msgstr "Порядок"
+
+msgctxt "#31033"
+msgid "Your rating"
+msgstr "Ваш рейтинг"
+
+msgctxt "#31034"
+msgid "Extended info"
+msgstr "Дополнительная информация"
 
 msgctxt "#31035"
 msgid "Pages"
@@ -160,6 +188,18 @@ msgctxt "#31060"
 msgid "minutes"
 msgstr "мин."
 
+msgctxt "#31061"
+msgid "Main menu items"
+msgstr "Элементы главного меню"
+
+msgctxt "#31065"
+msgid "Video playlist"
+msgstr "Плейлист видео"
+
+msgctxt "#31066"
+msgid "Music playlist"
+msgstr "Музыкальный плейлист"
+
 msgctxt "#31067"
 msgid "Event log"
 msgstr "Журнал событий"
@@ -176,6 +216,10 @@ msgctxt "#31072"
 msgid "Power Options"
 msgstr "Настройки питания"
 
+msgctxt "#31075"
+msgid "Movie sets"
+msgstr "Киноциклы"
+
 msgctxt "#31081"
 msgid "Album info"
 msgstr "Сведения об альбоме"
@@ -191,6 +235,10 @@ msgstr "Настройки визуализации"
 msgctxt "#31085"
 msgid "Channel Group"
 msgstr "Группа каналов"
+
+msgctxt "#31086"
+msgid "Metadata"
+msgstr "Метаданные"
 
 msgctxt "#31088"
 msgid "Content scanning options"
@@ -259,3 +307,11 @@ msgstr "Телетекст"
 msgctxt "#31107"
 msgid "WideList"
 msgstr "Широкий список"
+
+msgctxt "#31133"
+msgid "Hide"
+msgstr "Скрыть"
+
+msgctxt "#31134"
+msgid "Remaining"
+msgstr "Осталось"

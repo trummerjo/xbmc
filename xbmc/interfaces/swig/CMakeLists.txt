@@ -1,4 +1,4 @@
-macro(generate_file file)
+function(generate_file file)
   set(classpath ${GROOVY_DIR}/groovy-all-${GROOVY_VER}.jar
                 ${GROOVY_DIR}/commons-lang-${COMMONS_VER}.jar
                 ${CORE_SOURCE_DIR}/tools/codegenerator
@@ -10,36 +10,18 @@ macro(generate_file file)
     set(devnull "nul")
   endif()
 
-  add_custom_command(OUTPUT ${file}.cpp
+  set(CPP_FILE ${file}.cpp)
+  add_custom_command(OUTPUT ${CPP_FILE}
                      COMMAND ${SWIG_EXECUTABLE}
                      ARGS -w401 -c++ -o ${file}.xml -xml -I${CORE_SOURCE_DIR}/xbmc -xmllang python ${CMAKE_CURRENT_SOURCE_DIR}/../swig/${file}
                      COMMAND ${Java_JAVA_EXECUTABLE}
-                     ARGS -cp "${classpath}" groovy.ui.GroovyMain ${CORE_SOURCE_DIR}/tools/codegenerator/Generator.groovy ${file}.xml ${CMAKE_CURRENT_SOURCE_DIR}/../python/PythonSwig.cpp.template ${file}.cpp ${CMAKE_CURRENT_BINARY_DIR}/doxygenxml > ${devnull}
-                     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${file} ${INTERFACE_FILES} ${CMAKE_CURRENT_BINARY_DIR}/.doxygen-gen
-                     IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/../swig/${file})
-  list(APPEND SOURCES ${file}.cpp)
-endmacro()
+                     ARGS -cp "${classpath}" groovy.ui.GroovyMain ${CORE_SOURCE_DIR}/tools/codegenerator/Generator.groovy ${file}.xml ${CMAKE_CURRENT_SOURCE_DIR}/../python/PythonSwig.cpp.template ${file}.cpp > ${devnull}
+                     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../swig/${file})
+  set(SOURCES ${SOURCES} "${CPP_FILE}" PARENT_SCOPE)
+endfunction()
 
 find_package(Java COMPONENTS Runtime REQUIRED)
 find_package(SWIG REQUIRED)
-find_package(Doxygen)
-if(DOXYGEN_FOUND)
-  set(doxy_dir ${CMAKE_CURRENT_SOURCE_DIR}/../legacy)
-  set(legacy_doxy_output_dir ${CMAKE_CURRENT_BINARY_DIR})
-  configure_file(${doxy_dir}/Doxyfile.in Doxyfile @ONLY)
-  add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/.doxygen-gen
-                     COMMAND ${DOXYGEN_EXECUTABLE}
-                     ARGS ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-                     WORKING_DIRECTORY ${doxy_dir}
-                     COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/.doxygen-gen
-                     MAIN_DEPENDENCY ${doxy_dir}/Doxyfile.in)
-else()
-  message(STATUS "Warning: No doxygen installed. The Api will not have any docstrings.")
-  add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/.doxygen-gen
-                     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/generated/doxygenxml
-                     COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/.doxygen-gen)
-endif()
-
 
 # The generated bindings
 set(INPUTS AddonModuleXbmcaddon.i
@@ -53,13 +35,15 @@ set(GROOVY_DIR ${CORE_SOURCE_DIR}/tools/codegenerator/groovy)
 set(GROOVY_VER 2.4.4)
 set(COMMONS_VER 2.6)
 
-file(GLOB INTERFACE_FILES ${CORE_SOURCE_DIR}/xbmc/lib/legacy)
-
-set(SOURCES "")
-
-foreach(INPUT ${INPUTS})
+foreach(INPUT IN LISTS INPUTS)
   generate_file(${INPUT})
+  list(APPEND GEN_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${INPUT}.cpp)
 endforeach()
 
-core_add_library(python_binding)
-add_dependencies(python_binding python_interface libcpluff)
+add_library(python_binding STATIC ${SOURCES})
+set_target_properties(python_binding PROPERTIES POSITION_INDEPENDENT_CODE TRUE
+                                                FOLDER "Build Utilities")
+set(core_DEPENDS python_binding ${core_DEPENDS} CACHE STRING "" FORCE)
+if(WIN32)
+  add_precompiled_header(python_binding pch.h ${CORE_SOURCE_DIR}/xbmc/platform/win32/pch.cpp PCH_TARGET kodi)
+endif()
