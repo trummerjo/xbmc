@@ -319,6 +319,14 @@ bool CRenderManager::Configure()
     m_renderState = STATE_CONFIGURED;
 
     CLog::Log(LOGDEBUG, "CRenderManager::Configure - %d", m_QueueSize);
+
+    std::list<EINTERLACEMETHOD> deintmethods;
+    for (int deint = EINTERLACEMETHOD::VS_INTERLACEMETHOD_NONE; deint != EINTERLACEMETHOD::VS_INTERLACEMETHOD_MAX; deint++)
+    {
+      if (m_pRenderer->Supports((EINTERLACEMETHOD)deint))
+        deintmethods.push_back((EINTERLACEMETHOD)deint);
+    }
+    m_playerPort->UpdateDeinterlacingMethods(deintmethods);
   }
   else
     m_renderState = STATE_UNCONFIGURED;
@@ -827,10 +835,13 @@ void CRenderManager::FlipPage(volatile std::atomic_bool& bStop, double pts /* = 
         presentmethod = PRESENT_METHOD_BOB;
         invert = true;
       }
-      else if (interlacemethod == VS_INTERLACEMETHOD_IMX_FASTMOTION_DOUBLE)
-        presentmethod = PRESENT_METHOD_BOB;
       else
-        presentmethod = PRESENT_METHOD_SINGLE;
+      {
+        if (!m_pRenderer->WantsDoublePass())
+          presentmethod = PRESENT_METHOD_SINGLE;
+        else
+          presentmethod = PRESENT_METHOD_BOB;
+      }
 
       if (presentmethod != PRESENT_METHOD_SINGLE)
       {
@@ -931,10 +942,10 @@ void CRenderManager::Render(bool clear, DWORD flags, DWORD alpha, bool gui)
       vsync = StringUtils::Format("VSyncOff: %.1f  ", m_clockSync.m_syncOffset / 1000);
       if (m_dvdClock.GetClockInfo(missedvblanks, clockspeed, refreshrate))
       {
-        vsync += StringUtils::Format("VSync: refresh:%.3f missed:%i speed:%+.3f%%",
+        vsync += StringUtils::Format("VSync: refresh:%.3f missed:%i speed:%.3f%%",
                                      refreshrate,
                                      missedvblanks,
-                                     clockspeed - 100.0);
+                                     clockspeed * 100);
       }
 
       m_debugRenderer.SetInfo(audio, video, player, vsync);
@@ -1306,6 +1317,8 @@ void CRenderManager::PrepareNextRender()
   double renderPts = frameOnScreen + totalLatency;
 
   double nextFramePts = m_Queue[m_queued.front()].pts;
+  if (m_dvdClock.GetClockSpeed() < 0)
+    nextFramePts = renderPts;
 
   if (m_clockSync.m_enabled)
   {
@@ -1419,7 +1432,7 @@ void CRenderManager::CheckEnableClockSync()
   else
   {
     m_clockSync.m_enabled = false;
-    m_dvdClock.SetSpeedAdjust(0);
+    m_dvdClock.SetVsyncAdjust(0);
   }
 
   m_playerPort->UpdateClockSync(m_clockSync.m_enabled);
