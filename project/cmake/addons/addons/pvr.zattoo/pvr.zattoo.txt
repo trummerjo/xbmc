@@ -1,0 +1,1 @@
+pvr.zattoo https://github.com/trummerjo/pvr.zattoo.git master

@@ -303,6 +303,7 @@ const std::string CSettings::SETTING_PICTURES_DISPLAYRESOLUTION = "pictures.disp
 const std::string CSettings::SETTING_SLIDESHOW_STAYTIME = "slideshow.staytime";
 const std::string CSettings::SETTING_SLIDESHOW_DISPLAYEFFECTS = "slideshow.displayeffects";
 const std::string CSettings::SETTING_SLIDESHOW_SHUFFLE = "slideshow.shuffle";
+const std::string CSettings::SETTING_SLIDESHOW_HIGHQUALITYDOWNSCALING = "slideshow.highqualitydownscaling";
 const std::string CSettings::SETTING_WEATHER_CURRENTLOCATION = "weather.currentlocation";
 const std::string CSettings::SETTING_WEATHER_ADDON = "weather.addon";
 const std::string CSettings::SETTING_WEATHER_ADDONSETTINGS = "weather.addonsettings";
@@ -354,6 +355,7 @@ const std::string CSettings::SETTING_AUDIOOUTPUT_SAMPLERATE = "audiooutput.sampl
 const std::string CSettings::SETTING_AUDIOOUTPUT_STEREOUPMIX = "audiooutput.stereoupmix";
 const std::string CSettings::SETTING_AUDIOOUTPUT_MAINTAINORIGINALVOLUME = "audiooutput.maintainoriginalvolume";
 const std::string CSettings::SETTING_AUDIOOUTPUT_PROCESSQUALITY = "audiooutput.processquality";
+const std::string CSettings::SETTING_AUDIOOUTPUT_ATEMPOTHRESHOLD = "audiooutput.atempothreshold";
 const std::string CSettings::SETTING_AUDIOOUTPUT_STREAMSILENCE = "audiooutput.streamsilence";
 const std::string CSettings::SETTING_AUDIOOUTPUT_DSPADDONSENABLED = "audiooutput.dspaddonsenabled";
 const std::string CSettings::SETTING_AUDIOOUTPUT_DSPSETTINGS = "audiooutput.dspsettings";
@@ -1063,6 +1065,7 @@ void CSettings::InitializeISettingCallbacks()
   settingSet.insert(CSettings::SETTING_AUDIOOUTPUT_PASSTHROUGH);
   settingSet.insert(CSettings::SETTING_AUDIOOUTPUT_CHANNELS);
   settingSet.insert(CSettings::SETTING_AUDIOOUTPUT_PROCESSQUALITY);
+  settingSet.insert(CSettings::SETTING_AUDIOOUTPUT_ATEMPOTHRESHOLD);
   settingSet.insert(CSettings::SETTING_AUDIOOUTPUT_GUISOUNDMODE);
   settingSet.insert(CSettings::SETTING_AUDIOOUTPUT_STEREOUPMIX);
   settingSet.insert(CSettings::SETTING_AUDIOOUTPUT_AC3PASSTHROUGH);

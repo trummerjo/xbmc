@@ -210,7 +210,7 @@ bool CEpgContainer::Stop(void)
 
 void CEpgContainer::Notify(const Observable &obs, const ObservableMessage msg)
 {
-  if (msg == ObservableMessageEpg)
+  if (msg == ObservableMessageEpgItemUpdate)
   {
     // there can be many of these notifications during short time period. Thus, announce async and not every event.
     CSingleLock lock(m_critSection);
@@ -692,9 +692,6 @@ bool CEpgContainer::UpdateEPG(bool bOnlyPending /* = false */)
   }
   else
   {
-    if (g_PVRManager.IsStarted())
-      g_PVRManager.Recordings()->UpdateEpgTags();
-
     CSingleLock lock(m_critSection);
     CDateTime::GetCurrentDateTime().GetAsUTCDateTime().GetAsTime(m_iNextEpgUpdate);
     m_iNextEpgUpdate += g_advancedSettings.m_iEpgUpdateCheckInterval;
